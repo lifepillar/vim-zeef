@@ -197,7 +197,7 @@ fun! finder#open(items, callback, label) abort
       call add(s:undoseq, l:seq_new != l:seq_old) " seq_new != seq_old iff the buffer has changed
       norm gg
     elseif s:keypressed ==# "\<bs>" " Backspace
-      let s:filter = s:filter[:-2]
+      let s:filter = strcharpart(s:filter, 0, strchars(s:filter) - 1)
       if (empty(s:undoseq) ? 0 : remove(s:undoseq, -1))
         silent undo
       endif
