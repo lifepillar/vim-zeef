@@ -303,6 +303,6 @@ fun! s:test(result)
 endf
 
 fun! finder#test()
-  call finder#open(['a', 'b', 'c', 'd', 'e'], 's:test', 'Select multiple')
+  call finder#open(['a😉', 'b', 'c😉❯❯', 'd😉❯ye', 'e ❯🎺'], 's:test', 'Select multiple')
 endf
 " }}}
