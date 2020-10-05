@@ -3,49 +3,49 @@
 " Maintainer:  Lifepillar <lifepillar@lifepillar.me>
 " License:     Public domain
 
+" Internal state {{{
 const s:prompt = get(g:, 'finder_prompt', ' ❯❯ ')
-
 " Finder's buffer number
 let s:bufnr = -1
-" Window layout to restore when Finder is closed
+" Window layout to restore when the finder is closed
 let s:winrestsize = {}
 " The items to be filtered
 let s:items = []
-" The selected item
-let s:result = ''
-" The callback to be invoked on the selected item
+" The selected items
+let s:result = []
+" The callback to be invoked on the selected items
 let s:callback = ''
 " The latest key press
 let s:keypressed = ''
-" Text used to filter the list
+" Text used to filter the input list
 let s:filter = ''
 " Stack of 0s/1s that tells whether to undo when pressing backspace.
 " If the top of the stack is 1 then undo; if it is 0, do not undo.
 let s:undoseq = []
+" }}}
+" Key actions {{{
+fun! finder#up()
+  norm k
+  return 0
+endf
 
-let s:keymap = extend({
-      \ "\<c-k>":   "norm k",
-      \ "\<up>":    "norm k",
-      \ "\<c-j>":   "norm j",
-      \ "\<down>":  "norm j",
-      \ "\<left>":  "norm 5zh",
-      \ "\<right>": "norm 5zl",
-      \ "\<c-b>":   'execute "normal" "\<c-b>"',
-      \ "\<c-d>":   'execute "normal" s:keypressed',
-      \ "\<c-e>":   'execute "normal" s:keypressed',
-      \ "\<c-y>":   'execute "normal" s:keypressed',
-      \ "\<c-f>":   'execute "normal" s:keypressed',
-      \ "\<c-u>":   'execute "normal" s:keypressed',
-      \ "\<c-l>":   "return finder#clear()",
-      \ "\<enter>": "return finder#accept('')",
-      \ "\<c-s>":   "return finder#accept('split')",
-      \ "\<c-v>":   "return finder#accept('vsplit')",
-      \ "\<c-t>":   "return finder#accept('tabnew')",
-      \ "":         "",
-      \ }, get(g:, "finder_keymap", {}))
+fun! finder#down()
+  norm j
+  return 0
+endf
 
-fun! s:do()
-  execute get(s:keymap, s:keypressed, "")
+fun! finder#right()
+  norm 5zl
+  return 0
+endf
+
+fun! finder#left()
+  norm 5zh
+  return 0
+endf
+
+fun! finder#passthrough()
+  execute "normal" s:keypressed
   return 0
 endf
 
@@ -57,7 +57,7 @@ fun! finder#clear()
 endf
 
 fun! finder#close(action)
-  let s:result = getline('.')
+  call add(s:result, getline('.'))
   wincmd p
   execute "bwipe!" s:bufnr
   execute s:winrestsize
@@ -69,20 +69,76 @@ fun! finder#close(action)
   return 1
 endf
 
-fun! finder#result()
-  return s:result
+call prop_type_delete('foo')
+call prop_type_add('foo', {'highlight': 'Error'})
+
+fun! finder#toggle()
+  let l:idx = index(s:result, getline('.'))
+  if l:idx != -1
+    call remove(s:result, l:idx)
+    call prop_remove(#{ type: 'foo' }, line('.'))
+  else
+    call add(s:result, getline('.'))
+    call prop_add(line('.'), 1,  #{ type: 'foo', length: len(getline('.')) })
+  endif
+  return 0
 endf
 
-fun! finder#keypressed()
-  return s:keypressed
-endf
-
-fun! finder#accept(action)
+fun! s:accept(action)
   call finder#close(a:action)
   if !empty(s:result)
-    call function(s:callback)()
+    call function(s:callback)(s:result)
   endif
   return 1
+endf
+
+fun! finder#accept()
+  return s:accept('')
+endf
+
+fun! finder#accept_split()
+  return s:accept('split')
+endf
+
+fun! finder#accept_vsplit()
+  return s:accept('vsplit')
+endf
+
+fun! finder#accept_tabnew()
+  return s:accept('tabnew')
+endf
+" }}}
+" Keymap {{{
+let s:keymap = extend({
+      \ "\<c-k>":   function('finder#up'),
+      \ "\<up>":    function('finder#up'),
+      \ "\<c-j>":   function('finder#down'),
+      \ "\<down>":  function('finder#down'),
+      \ "\<left>":  function('finder#left'),
+      \ "\<right>": function('finder#right'),
+      \ "\<c-b>":   function('finder#passthrough'),
+      \ "\<c-d>":   function('finder#passthrough'),
+      \ "\<c-e>":   function('finder#passthrough'),
+      \ "\<c-y>":   function('finder#passthrough'),
+      \ "\<c-f>":   function('finder#passthrough'),
+      \ "\<c-u>":   function('finder#passthrough'),
+      \ "\<c-l>":   function('finder#clear'),
+      \ "\<c-z>":   function('finder#toggle'),
+      \ "\<enter>": function('finder#accept'),
+      \ "\<c-s>":   function('finder#accept_split'),
+      \ "\<c-v>":   function('finder#accept_vsplit'),
+      \ "\<c-t>":   function('finder#accept_tabnew'),
+      \ }, get(g:, "finder_keymap", {}))
+" }}}
+" Main interface {{{
+
+" Default regexp filter.
+"
+" This behaves mostly like globbing, except that ^ and $ can be used to anchor
+" a pattern. All characters are matched literally except ^, $, and *; the
+" latter matches zero 0 more characters.
+fun! s:default_regexp(input)
+  return substitute(escape(a:input, '~.\[:'), '\*', '.*', 'g')
 endf
 
 " Interactively filter a list of items as you type,
@@ -95,20 +151,25 @@ fun! finder#open(items, callback, label) abort
   let s:winrestsize = winrestcmd()
   let s:items = a:items
   let s:callback = a:callback
+  let s:result = []
 
   " botright 10new does not set the right height, e.g., if the quickfix window is open
-  botright 1new | 9wincmd +
+  execute printf("botright :1new | %dwincmd +", get(g:, 'finder_height', 9))
 
-  setlocal buftype=nofile bufhidden=wipe cursorline foldmethod=manual modifiable
-        \  nobuflisted nofoldenable nonumber noreadonly norelativenumber nospell
-        \  noswapfile noundofile nowrap scrolloff=0 winfixheight
-  setlocal statusline=%#CommandMode#\ Finder\ %*\ %l\ of\ %L
+  setlocal buftype=nofile bufhidden=wipe nobuflisted
+        \  modifiable noreadonly noswapfile noundofile
+        \  foldmethod=manual nofoldenable nospell
+        \  nowrap scrolloff=0 winfixheight
+        \  cursorline nonumber norelativenumber
+        \  statusline=%#CommandMode#\ Finder\ %*\ %l\ of\ %L
+
   let s:bufnr = bufnr('%')
 
+  call finder#clear()
+
+  let l:Regexp = get(g:, 'finder_regexp', function('s:default_regexp'))
   let l:prompt = a:label .. s:prompt
   echo l:prompt
-
-  call finder#clear()
   redraw
 
   while 1
@@ -119,8 +180,6 @@ fun! finder#open(items, callback, label) abort
     try
       let ch = getchar()
     catch /^Vim:Interrupt$/  " CTRL-C
-      let s:keypressed = "\<c-c>"
-      let s:result = ''
       return finder#close('')
     endtry
 
@@ -130,13 +189,12 @@ fun! finder#open(items, callback, label) abort
       let s:filter ..= s:keypressed
       let l:seq_old = get(undotree(), 'seq_cur', 0)
       try
-        execute 'silent keeppatterns g!:\m' .. substitute(escape(s:filter, '~.\[:'), '\*', '.*', 'g') .. ':norm "_dd'
+        execute 'silent keeppatterns g!:\m' .. l:Regexp(s:filter) .. ':norm "_dd'
       catch /^Vim\%((\a\+)\)\=:E/
-        echomsg "ERROR"
         let l:error = 1
       endtry
       let l:seq_new = get(undotree(), 'seq_cur', 0)
-      call add(s:undoseq, l:seq_new != l:seq_old) " seq_new != seq_old iff buffer has changed
+      call add(s:undoseq, l:seq_new != l:seq_old) " seq_new != seq_old iff the buffer has changed
       norm gg
     elseif s:keypressed ==# "\<bs>" " Backspace
       let s:filter = s:filter[:-2]
@@ -147,7 +205,7 @@ fun! finder#open(items, callback, label) abort
     elseif s:keypressed == "\<esc>"
       return finder#close('')
     else
-      if s:do()
+      if get(s:keymap, s:keypressed, function('s:noop'))()
         return
       endif
     endif
@@ -156,51 +214,50 @@ fun! finder#open(items, callback, label) abort
     echo (l:error ? '[Invalid pattern] ' : '') .. l:prompt s:filter
   endwhile
 endf
+" }}}
+" Sample applications {{{
 
-
-"
-" Find a file
-"
-fun! s:set_arglist()
-  let paths = [finder#result()]
-  execute "args" join(map(paths, 'fnameescape(v:val)'))
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Simple path filters
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+fun! s:set_arglist(result)
+  execute "args" join(map(a:result, 'fnameescape(v:val)'))
 endf
 
 " Filter a list of paths and populate the arglist with the selected items.
 fun! finder#args(paths)
-  call finder#open(a:paths, 's:set_arglist', 'Choose file')
+  call finder#open(a:paths, 's:set_arglist', 'Choose files')
 endf
 
+" Ditto, but use the paths in the specified directory
 fun! finder#file(...) " ... is an optional directory
   let l:dir = (a:0 > 0 ? a:1 : '.')
-  call finder#open(systemlist(executable('rg') ? 'rg --files ' .. l:dir : 'find ' .. l:dir .. ' -type f'), 's:set_arglist', 'Choose file')
+  call finder#open(systemlist(executable('rg') ? 'rg --files ' .. l:dir : 'find ' .. l:dir .. ' -type f'), 's:set_arglist', 'Choose files')
 endf
 
-"
-" Find buffer
-"
-fun! s:switch_to_buffer()
-  execute "buffer" split(finder#result(), '\s\+')[0]
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" A buffer switcher
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+fun! s:switch_to_buffer(result)
+  execute "buffer" matchstr(a:result[0], '^\s*\zs\d\+')
 endf
 
-
-" When 'unlisted' is set to 1, show also unlisted buffers
-fun! finder#buffer(unlisted)
-  let l:buffers = map(split(execute('ls'.(a:unlisted ? '!' : '')), "\n"), { i,v -> substitute(v, '"\(.*\)"\s*line\s*\d\+$', '\1', '') })
+" props is a dictionary with the following keys:
+"   - unlisted: when set to 1, show also unlisted buffers
+fun! finder#buffer(props)
+  let l:buffers = map(split(execute('ls' .. (get(a:props, 'unlisted', 0) ? '!' : '')), "\n"), { i,v -> substitute(v, '"\(.*\)"\s*line\s*\d\+$', '\1', '') })
   call finder#open(l:buffers, 's:switch_to_buffer', 'Switch buffer')
 endf
 
-"
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Find in quickfix/location list
-"
-fun! s:jump_to_qf_entry()
-  let items = [finder#result()]
-  execute "crewind" matchstr(a:items[0], '^\s*\d\+', '')
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+fun! s:jump_to_qf_entry(result)
+  execute "crewind" matchstr(a:result[0], '^\s*\d\+', '')
 endf
 
-fun! s:jump_to_loclist_entry()
-  let items = [finder#result()]
-  execute "lrewind" matchstr(items[0], '^\s*\d\+', '')
+fun! s:jump_to_loclist_entry(result)
+  execute "lrewind" matchstr(a:result[0], '^\s*\d\+', '')
 endf
 
 fun! finder#qflist()
@@ -221,12 +278,11 @@ fun! finder#loclist(winnr)
   call finder#open(split(execute('llist'), "\n"), 's:jump_to_loclist_entry', 'Filter loclist entry')
 endf
 
-"
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Find colorscheme
-"
-fun! s:set_colorscheme()
-  let colors = [finder#result()]
-  execute "colorscheme" colors[0]
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+fun! s:set_colorscheme(result)
+  execute "colorscheme" a:result[0]
 endf
 
 let s:colors = []
@@ -239,3 +295,14 @@ fun! finder#colorscheme()
   call finder#open(s:colors, 's:set_colorscheme', 'Choose colorscheme')
 endf
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" For tests
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+fun! s:test(result)
+  echo a:result
+endf
+
+fun! finder#test()
+  call finder#open(['a', 'b', 'c', 'd', 'e'], 's:test', 'Select multiple')
+endf
+" }}}
