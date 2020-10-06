@@ -5,7 +5,7 @@
 " Description: Zeef is Dutch for sieve, I've been told
 
 " Internal state {{{
-const s:prompt = get(g:, 'finder_prompt', ' ❯❯ ')
+const s:prompt = get(g:, 'zeef_prompt', ' ❯❯ ')
 " Finder's buffer number
 let s:bufnr = -1
 " Window layout to restore when the finder is closed
@@ -129,7 +129,7 @@ let s:keymap = extend({
       \ "\<c-s>":   function('zeef#accept_split'),
       \ "\<c-v>":   function('zeef#accept_vsplit'),
       \ "\<c-t>":   function('zeef#accept_tabnew'),
-      \ }, get(g:, "finder_keymap", {}))
+      \ }, get(g:, "zeef_keymap", {}))
 " }}}
 " Main interface {{{
 
@@ -155,7 +155,7 @@ fun! zeef#open(items, callback, label) abort
   let s:result = []
 
   " botright 10new may not set the right height, e.g., if the quickfix window is open
-  execute printf("botright :1new | %dwincmd +", get(g:, 'finder_height', 9))
+  execute printf("botright :1new | %dwincmd +", get(g:, 'zeef_height', 9))
 
   setlocal buftype=nofile bufhidden=wipe nobuflisted
         \  modifiable noreadonly noswapfile noundofile
