@@ -80,7 +80,7 @@ fun! zeef#clear()
 endf
 
 fun! zeef#close(action)
-  if index(s:result, getline('.')) == -1
+  if empty(s:result)
     call add(s:result, getline('.'))
   endif
   wincmd p
