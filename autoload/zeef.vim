@@ -80,7 +80,9 @@ fun! zeef#clear()
 endf
 
 fun! zeef#close(action)
-  call add(s:result, getline('.'))
+  if index(s:result, getline(',')) == -1
+    call add(s:result, getline('.'))
+  endif
   wincmd p
   execute "bwipe!" s:bufnr
   execute s:winrestsize
