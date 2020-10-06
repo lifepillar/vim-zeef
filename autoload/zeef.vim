@@ -5,24 +5,46 @@
 " Description: Zeef is Dutch for sieve, I've been told
 
 " Internal state {{{
+
+" The prompt
 const s:prompt = get(g:, 'zeef_prompt', ' ❯❯ ')
+
 " Finder's buffer number
 let s:bufnr = -1
+
 " Window layout to restore when the finder is closed
 let s:winrestsize = {}
+
 " The items to be filtered
 let s:items = []
+
 " The selected items
 let s:result = []
+
 " The callback to be invoked on the selected items
 let s:callback = ''
+
 " The latest key press
 let s:keypressed = ''
+
 " Text used to filter the input list
 let s:filter = ''
+
 " Stack of 0s/1s that tells whether to undo when pressing backspace.
 " If the top of the stack is 1 then undo; if it is 0, do not undo.
 let s:undoseq = []
+
+" Default regexp filter.
+"
+" This behaves mostly like globbing, except that ^ and $ can be used to anchor
+" a pattern. All characters are matched literally except ^, $, and *; the
+" latter matches zero 0 more characters.
+fun! s:default_regexp(input)
+  return substitute(escape(a:input, '~.\[:'), '\*', '.*', 'g')
+endf
+
+" The function used to generate the filter
+let s:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))
 " }}}
 " Key actions {{{
 fun! zeef#up()
@@ -133,13 +155,12 @@ let s:keymap = extend({
 " }}}
 " Main interface {{{
 
-" Default regexp filter.
-"
-" This behaves mostly like globbing, except that ^ and $ can be used to anchor
-" a pattern. All characters are matched literally except ^, $, and *; the
-" latter matches zero 0 more characters.
-fun! s:default_regexp(input)
-  return substitute(escape(a:input, '~.\[:'), '\*', '.*', 'g')
+fun! s:redraw(prompt)
+  if !empty(s:filter)
+    call matchadd('Error', '\c' .. s:Regexp(s:filter), 10, 42)
+  endif
+  redraw
+  echo a:prompt
 endf
 
 " Interactively filter a list of items as you type,
@@ -168,7 +189,7 @@ fun! zeef#open(items, callback, label) abort
 
   call zeef#clear()
 
-  let l:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))
+  let s:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))
   let l:prompt = a:label .. s:prompt
   echo l:prompt
   redraw
@@ -177,6 +198,7 @@ fun! zeef#open(items, callback, label) abort
     let &ro=&ro     " Force status line update
     let l:error = 0 " Set to 1 when the input pattern is invalid
     let s:keypressed = ''
+    call clearmatches()
 
     try
       let ch = getchar()
@@ -189,13 +211,12 @@ fun! zeef#open(items, callback, label) abort
     if ch >=# 0x20 " Printable character
       let s:filter ..= s:keypressed
       if strchars(s:filter) < get(g:, 'zeef_skip_first', 0)
-        redraw
-        echo l:prompt s:filter
+        call s:redraw(l:prompt .. s:filter)
         continue
       endif
       let l:seq_old = get(undotree(), 'seq_cur', 0)
       try
-        execute 'silent keeppatterns g!:\m' .. l:Regexp(s:filter) .. ':norm "_dd'
+        execute 'silent keeppatterns g!:\m' .. s:Regexp(s:filter) .. ':norm "_dd'
       catch /^Vim\%((\a\+)\)\=:E/
         let l:error = 1
       endtry
@@ -216,8 +237,7 @@ fun! zeef#open(items, callback, label) abort
       endif
     endif
 
-    redraw
-    echo (l:error ? '[Invalid pattern] ' : '') .. l:prompt s:filter
+    call s:redraw((l:error ? '[Invalid pattern] ' : '') .. l:prompt .. s:filter)
   endwhile
 endf
 " }}}
@@ -236,7 +256,7 @@ fun! zeef#args(paths)
 endf
 
 " Ditto, but use the paths in the specified directory
-fun! zeef#file(...) " ... is an optional directory
+fun! zeef#files(...) " ... is an optional directory
   let l:dir = (a:0 > 0 ? a:1 : '.')
   call zeef#open(systemlist(executable('rg') ? 'rg --files ' .. l:dir : 'find ' .. l:dir .. ' -type f'), 's:set_arglist', 'Choose files')
 endf
