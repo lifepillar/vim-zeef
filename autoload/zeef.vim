@@ -232,7 +232,7 @@ fun! zeef#open(items, callback, label) abort
     elseif s:keypressed == "\<esc>"
       return zeef#close('')
     else
-      if get(s:keymap, s:keypressed, { _ -> 0 })()
+      if get(s:keymap, s:keypressed, { -> 0 })()
         return
       endif
     endif
