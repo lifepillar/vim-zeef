@@ -168,7 +168,7 @@ fun! zeef#open(items, callback, label) abort
 
   call zeef#clear()
 
-  let l:Regexp = get(g:, 'Finder_regexp', function('s:default_regexp'))
+  let l:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))
   let l:prompt = a:label .. s:prompt
   echo l:prompt
   redraw
@@ -188,7 +188,7 @@ fun! zeef#open(items, callback, label) abort
 
     if ch >=# 0x20 " Printable character
       let s:filter ..= s:keypressed
-      if strchars(s:filter) < get(g:, 'finder_skip_first', 0)
+      if strchars(s:filter) < get(g:, 'zeef_skip_first', 0)
         redraw
         echo l:prompt s:filter
         continue
