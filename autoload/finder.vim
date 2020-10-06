@@ -167,7 +167,7 @@ fun! finder#open(items, callback, label) abort
 
   call finder#clear()
 
-  let l:Regexp = get(g:, 'finder_regexp', function('s:default_regexp'))
+  let l:Regexp = get(g:, 'Finder_regexp', function('s:default_regexp'))
   let l:prompt = a:label .. s:prompt
   echo l:prompt
   redraw
