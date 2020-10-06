@@ -187,6 +187,11 @@ fun! finder#open(items, callback, label) abort
 
     if ch >=# 0x20 " Printable character
       let s:filter ..= s:keypressed
+      if strchars(s:filter) < get(g:, 'finder_skip_first', 0)
+        redraw
+        echo l:prompt s:filter
+        continue
+      endif
       let l:seq_old = get(undotree(), 'seq_cur', 0)
       try
         execute 'silent keeppatterns g!:\m' .. l:Regexp(s:filter) .. ':norm "_dd'
