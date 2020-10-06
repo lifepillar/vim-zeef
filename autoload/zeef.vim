@@ -1,7 +1,8 @@
-" Name:        Finder
+" Name:        Zeef
 " Author:      Lifepillar <lifepillar@lifepillar.me>
 " Maintainer:  Lifepillar <lifepillar@lifepillar.me>
 " License:     Public domain
+" Description: Zeef is Dutch for sieve, I've been told
 
 " Internal state {{{
 const s:prompt = get(g:, 'finder_prompt', ' ❯❯ ')
@@ -24,39 +25,39 @@ let s:filter = ''
 let s:undoseq = []
 " }}}
 " Key actions {{{
-fun! finder#up()
+fun! zeef#up()
   norm k
   return 0
 endf
 
-fun! finder#down()
+fun! zeef#down()
   norm j
   return 0
 endf
 
-fun! finder#right()
+fun! zeef#right()
   norm 5zl
   return 0
 endf
 
-fun! finder#left()
+fun! zeef#left()
   norm 5zh
   return 0
 endf
 
-fun! finder#passthrough()
+fun! zeef#passthrough()
   execute "normal" s:keypressed
   return 0
 endf
 
-fun! finder#clear()
+fun! zeef#clear()
   call setline(1, s:items)
   let s:undoseq = []
   let s:filter = ''
   return 0
 endf
 
-fun! finder#close(action)
+fun! zeef#close(action)
   call add(s:result, getline('.'))
   wincmd p
   execute "bwipe!" s:bufnr
@@ -72,7 +73,7 @@ endf
 call prop_type_delete('foo')
 call prop_type_add('foo', {'highlight': 'Error'})
 
-fun! finder#toggle()
+fun! zeef#toggle()
   let l:idx = index(s:result, getline('.'))
   if l:idx != -1
     call remove(s:result, l:idx)
@@ -85,49 +86,49 @@ fun! finder#toggle()
 endf
 
 fun! s:accept(action)
-  call finder#close(a:action)
+  call zeef#close(a:action)
   if !empty(s:result)
     call function(s:callback)(s:result)
   endif
   return 1
 endf
 
-fun! finder#accept()
+fun! zeef#accept()
   return s:accept('')
 endf
 
-fun! finder#accept_split()
+fun! zeef#accept_split()
   return s:accept('split')
 endf
 
-fun! finder#accept_vsplit()
+fun! zeef#accept_vsplit()
   return s:accept('vsplit')
 endf
 
-fun! finder#accept_tabnew()
+fun! zeef#accept_tabnew()
   return s:accept('tabnew')
 endf
 " }}}
 " Keymap {{{
 let s:keymap = extend({
-      \ "\<c-k>":   function('finder#up'),
-      \ "\<up>":    function('finder#up'),
-      \ "\<c-j>":   function('finder#down'),
-      \ "\<down>":  function('finder#down'),
-      \ "\<left>":  function('finder#left'),
-      \ "\<right>": function('finder#right'),
-      \ "\<c-b>":   function('finder#passthrough'),
-      \ "\<c-d>":   function('finder#passthrough'),
-      \ "\<c-e>":   function('finder#passthrough'),
-      \ "\<c-y>":   function('finder#passthrough'),
-      \ "\<c-f>":   function('finder#passthrough'),
-      \ "\<c-u>":   function('finder#passthrough'),
-      \ "\<c-l>":   function('finder#clear'),
-      \ "\<c-z>":   function('finder#toggle'),
-      \ "\<enter>": function('finder#accept'),
-      \ "\<c-s>":   function('finder#accept_split'),
-      \ "\<c-v>":   function('finder#accept_vsplit'),
-      \ "\<c-t>":   function('finder#accept_tabnew'),
+      \ "\<c-k>":   function('zeef#up'),
+      \ "\<up>":    function('zeef#up'),
+      \ "\<c-j>":   function('zeef#down'),
+      \ "\<down>":  function('zeef#down'),
+      \ "\<left>":  function('zeef#left'),
+      \ "\<right>": function('zeef#right'),
+      \ "\<c-b>":   function('zeef#passthrough'),
+      \ "\<c-d>":   function('zeef#passthrough'),
+      \ "\<c-e>":   function('zeef#passthrough'),
+      \ "\<c-y>":   function('zeef#passthrough'),
+      \ "\<c-f>":   function('zeef#passthrough'),
+      \ "\<c-u>":   function('zeef#passthrough'),
+      \ "\<c-l>":   function('zeef#clear'),
+      \ "\<c-z>":   function('zeef#toggle'),
+      \ "\<enter>": function('zeef#accept'),
+      \ "\<c-s>":   function('zeef#accept_split'),
+      \ "\<c-v>":   function('zeef#accept_vsplit'),
+      \ "\<c-t>":   function('zeef#accept_tabnew'),
       \ }, get(g:, "finder_keymap", {}))
 " }}}
 " Main interface {{{
@@ -147,13 +148,13 @@ endf
 " items: A List of items to be filtered
 " callback: A function, funcref, or lambda to be called on the selected item(s)
 " label: A name for the finder's prompt
-fun! finder#open(items, callback, label) abort
+fun! zeef#open(items, callback, label) abort
   let s:winrestsize = winrestcmd()
   let s:items = a:items
   let s:callback = a:callback
   let s:result = []
 
-  " botright 10new does not set the right height, e.g., if the quickfix window is open
+  " botright 10new may not set the right height, e.g., if the quickfix window is open
   execute printf("botright :1new | %dwincmd +", get(g:, 'finder_height', 9))
 
   setlocal buftype=nofile bufhidden=wipe nobuflisted
@@ -161,11 +162,11 @@ fun! finder#open(items, callback, label) abort
         \  foldmethod=manual nofoldenable nospell
         \  nowrap scrolloff=0 winfixheight
         \  cursorline nonumber norelativenumber
-        \  statusline=%#CommandMode#\ Finder\ %*\ %l\ of\ %L
+  execute 'setlocal statusline=%#' .. get(g:, 'zeef_name_hl', 'CommandMode') .. '#\ ' .. get(g:, 'zeef_name', 'Zeef') .. '\ %*\ %l\ of\ %L'
 
   let s:bufnr = bufnr('%')
 
-  call finder#clear()
+  call zeef#clear()
 
   let l:Regexp = get(g:, 'Finder_regexp', function('s:default_regexp'))
   let l:prompt = a:label .. s:prompt
@@ -180,7 +181,7 @@ fun! finder#open(items, callback, label) abort
     try
       let ch = getchar()
     catch /^Vim:Interrupt$/  " CTRL-C
-      return finder#close('')
+      return zeef#close('')
     endtry
 
     let s:keypressed = (type(ch) == 0 ? nr2char(ch) : ch)
@@ -208,7 +209,7 @@ fun! finder#open(items, callback, label) abort
       endif
       norm gg
     elseif s:keypressed == "\<esc>"
-      return finder#close('')
+      return zeef#close('')
     else
       if get(s:keymap, s:keypressed, function('s:noop'))()
         return
@@ -230,14 +231,14 @@ fun! s:set_arglist(result)
 endf
 
 " Filter a list of paths and populate the arglist with the selected items.
-fun! finder#args(paths)
-  call finder#open(a:paths, 's:set_arglist', 'Choose files')
+fun! zeef#args(paths)
+  call zeef#open(a:paths, 's:set_arglist', 'Choose files')
 endf
 
 " Ditto, but use the paths in the specified directory
-fun! finder#file(...) " ... is an optional directory
+fun! zeef#file(...) " ... is an optional directory
   let l:dir = (a:0 > 0 ? a:1 : '.')
-  call finder#open(systemlist(executable('rg') ? 'rg --files ' .. l:dir : 'find ' .. l:dir .. ' -type f'), 's:set_arglist', 'Choose files')
+  call zeef#open(systemlist(executable('rg') ? 'rg --files ' .. l:dir : 'find ' .. l:dir .. ' -type f'), 's:set_arglist', 'Choose files')
 endf
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -249,9 +250,9 @@ endf
 
 " props is a dictionary with the following keys:
 "   - unlisted: when set to 1, show also unlisted buffers
-fun! finder#buffer(props)
+fun! zeef#buffer(props)
   let l:buffers = map(split(execute('ls' .. (get(a:props, 'unlisted', 0) ? '!' : '')), "\n"), { i,v -> substitute(v, '"\(.*\)"\s*line\s*\d\+$', '\1', '') })
-  call finder#open(l:buffers, 's:switch_to_buffer', 'Switch buffer')
+  call zeef#open(l:buffers, 's:switch_to_buffer', 'Switch buffer')
 endf
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -265,22 +266,22 @@ fun! s:jump_to_loclist_entry(result)
   execute "lrewind" matchstr(a:result[0], '^\s*\d\+', '')
 endf
 
-fun! finder#qflist()
+fun! zeef#qflist()
   let l:qflist = getqflist()
   if empty(l:qflist)
-    echo '[Finder] Quickfix list is empty'
+    echo '[Zeef] Quickfix list is empty'
     return
   endif
-  call finder#open(split(execute('clist'), "\n"), 's:jump_to_qf_entry', 'Filter quickfix entry')
+  call zeef#open(split(execute('clist'), "\n"), 's:jump_to_qf_entry', 'Filter quickfix entry')
 endf
 
-fun! finder#loclist(winnr)
+fun! zeef#loclist(winnr)
   let l:loclist = getloclist(a:winnr)
   if empty(l:loclist)
-    echo '[Finder] Location list is empty'
+    echo '[Zeef] Location list is empty'
     return
   endif
-  call finder#open(split(execute('llist'), "\n"), 's:jump_to_loclist_entry', 'Filter loclist entry')
+  call zeef#open(split(execute('llist'), "\n"), 's:jump_to_loclist_entry', 'Filter loclist entry')
 endf
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -292,12 +293,12 @@ endf
 
 let s:colors = []
 
-fun! finder#colorscheme()
+fun! zeef#colorscheme()
   if empty(s:colors)
     let s:colors = map(globpath(&runtimepath, "colors/*.vim", v:false, v:true) , 'fnamemodify(v:val, ":t:r")')
     let s:colors += map(globpath(&packpath, "pack/*/{opt,start}/*/colors/*.vim", v:false, v:true) , 'fnamemodify(v:val, ":t:r")')
   endif
-  call finder#open(s:colors, 's:set_colorscheme', 'Choose colorscheme')
+  call zeef#open(s:colors, 's:set_colorscheme', 'Choose colorscheme')
 endf
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -307,7 +308,7 @@ fun! s:test(result)
   echo a:result
 endf
 
-fun! finder#test()
-  call finder#open(['a😉', 'b', 'c😉❯❯', 'd😉❯ye', 'e ❯🎺'], 's:test', 'Select multiple')
+fun! zeef#test()
+  call zeef#open(['a😉', 'b', 'c😉❯❯', 'd😉❯ye', 'e ❯🎺'], 's:test', 'Select multiple')
 endf
 " }}}
