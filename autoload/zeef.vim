@@ -157,7 +157,7 @@ let s:keymap = extend({
 
 fun! s:redraw(prompt)
   if !empty(s:filter)
-    call matchadd('Error', '\c' .. s:Regexp(s:filter), 10, 42)
+    call matchadd('Error', '\c' .. s:Regexp(s:filter))
   endif
   redraw
   echo a:prompt
