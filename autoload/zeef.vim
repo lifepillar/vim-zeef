@@ -158,9 +158,14 @@ let s:keymap = extend({
 " }}}
 " Main interface {{{
 
+" Highlight group for matches
+hi default      ZeefMatch term=bold cterm=bold gui=bold
+hi default link ZeefName StatusLine
+hi default      ZeefSelected term=reverse cterm=reverse gui=reverse
+
 fun! s:redraw(prompt)
   if !empty(s:filter)
-    call matchadd('Error', '\c' .. s:Regexp(s:filter))
+    call matchadd('ZeefMatch', '\c' .. s:Regexp(s:filter))
   endif
   redraw
   echo a:prompt
@@ -186,12 +191,12 @@ fun! zeef#open(items, callback, label) abort
         \  foldmethod=manual nofoldenable nospell
         \  nowrap scrolloff=0 winfixheight
         \  cursorline nonumber norelativenumber
-  execute 'setlocal statusline=%#' .. get(g:, 'zeef_name_hl', 'CommandMode') .. '#\ ' .. get(g:, 'zeef_name', 'Zeef') .. '\ %*\ %l\ of\ %L'
+  execute 'setlocal statusline=%#' .. get(g:, 'zeef_name_hl', 'ZeefName') .. '#\ ' .. get(g:, 'zeef_name', 'Zeef') .. '\ %*\ %l\ of\ %L'
 
   let s:bufnr = bufnr('%')
 
   if has('textprop')
-    call prop_type_add('_sel', { 'bufnr': s:bufnr, 'highlight': 'Error' })
+    call prop_type_add('_sel', { 'bufnr': s:bufnr, 'highlight': 'ZeefSelected' })
   endif
 
   call zeef#clear()
