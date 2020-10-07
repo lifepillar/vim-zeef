@@ -94,17 +94,18 @@ fun! zeef#close(action)
   return 1
 endf
 
-call prop_type_delete('foo')
-call prop_type_add('foo', {'highlight': 'Error'})
-
 fun! zeef#toggle()
   let l:idx = index(s:result, getline('.'))
   if l:idx != -1
     call remove(s:result, l:idx)
-    call prop_remove(#{ type: 'foo' }, line('.'))
+    if has('textprop')
+      call prop_remove({ 'bufnr': s:bufnr, 'type': '_sel' }, line('.'))
+    endif
   else
     call add(s:result, getline('.'))
-    call prop_add(line('.'), 1,  #{ type: 'foo', length: len(getline('.')) })
+    if has('textprop')
+      call prop_add(line('.'), 1,  { 'bufnr': s:bufnr, 'type': '_sel', 'length': len(getline('.')) })
+    endif
   endif
   return 0
 endf
@@ -189,12 +190,16 @@ fun! zeef#open(items, callback, label) abort
 
   let s:bufnr = bufnr('%')
 
+  if has('textprop')
+    call prop_type_add('_sel', { 'bufnr': s:bufnr, 'highlight': 'Error' })
+  endif
+
   call zeef#clear()
 
   let s:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))
   let l:prompt = a:label .. s:prompt
-  echo l:prompt
   redraw
+  echo l:prompt
 
   while 1
     let &ro=&ro     " Force status line update
