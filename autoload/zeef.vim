@@ -184,14 +184,14 @@ fun! zeef#open(items, callback, label) abort
   let s:result = []
 
   " botright 10new may not set the right height, e.g., if the quickfix window is open
-  execute printf("botright :1new | %dwincmd +", get(g:, 'zeef_height', 9))
+  execute printf("botright :1new | %dwincmd +", get(g:, 'zeef_height', 10) - 1)
 
   setlocal buftype=nofile bufhidden=wipe nobuflisted
         \  modifiable noreadonly noswapfile noundofile
         \  foldmethod=manual nofoldenable nospell
         \  nowrap scrolloff=0 winfixheight
         \  cursorline nonumber norelativenumber
-  execute 'setlocal statusline=%#' .. get(g:, 'zeef_name_hl', 'ZeefName') .. '#\ ' .. get(g:, 'zeef_name', 'Zeef') .. '\ %*\ %l\ of\ %L'
+  execute 'setlocal statusline=%#ZeefName#\ ' .. get(g:, 'zeef_name', 'Zeef') .. '\ %*\ %l\ of\ %L'
 
   let s:bufnr = bufnr('%')
 
