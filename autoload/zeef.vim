@@ -367,16 +367,4 @@ endf
 fun! zeef#buffer_tags()
   call zeef#open(zeef#tags('%', &ft), 's:jump_to_tag', 'Choose tag')
 endf
-
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" For tests
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-fun! s:test(result)
-  echo a:result
-endf
-
-fun! zeef#test()
-  call zeef#open(['a😉', 'b', 'c😉❯❯', 'd😉❯ye', 'e ❯🎺'], 's:test', 'Select multiple')
-endf
 " }}}
