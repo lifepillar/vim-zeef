@@ -329,6 +329,42 @@ fun! zeef#colorscheme()
 endf
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Buffer tags (using Ctags)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Adapted from CtrlP's buffertag.vim
+const s:types = extend({
+  \ 'aspperl':    'asp',
+  \ 'aspvbs':     'asp',
+  \ 'cpp':        'c++',
+  \ 'cs':         'c#',
+  \ 'delphi':     'pascal',
+  \ 'expect':     'tcl',
+  \ 'mf':         'metapost',
+  \ 'mp':         'metapost',
+  \ 'rmd':        'rmarkdown',
+  \ 'csh':        'sh',
+  \ 'zsh':        'sh',
+  \ 'tex':        'latex',
+  \ }, get(g:, 'zeef_ctags_types', {}))
+
+fun! zeef#tags(path, ft)
+    return systemlist(printf('ctags -f - --sort=no --excmd=number --fields= --extra= --file-scope=yes --language-force=%s %s',
+          \ get(s:types, a:ft, a:ft),
+          \ shellescape(expand(a:path))
+          \ ))
+endf
+
+fun! s:jump_to_tag(result)
+  let [l:tag, l:bufname, l:line] = split(a:result[0], '\s\+')
+  execute "buffer" "+" .. l:line l:bufname
+endf
+
+fun! zeef#buffer_tags()
+  call zeef#open(zeef#tags('%', &ft), 's:jump_to_tag', 'Choose tag')
+endf
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " For tests
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 fun! s:test(result)
