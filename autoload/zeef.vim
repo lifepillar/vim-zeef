@@ -7,7 +7,7 @@
 " Internal state {{{
 
 " The prompt
-const s:prompt = get(g:, 'zeef_prompt', ' ❯❯ ')
+const s:prompt = get(g:, 'zeef_prompt', '> ')
 
 " Finder's buffer number
 let s:bufnr = -1
