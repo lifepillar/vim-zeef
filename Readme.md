@@ -1,8 +1,8 @@
 # Zeef
 
-Zeef is a minimalist dynamic interactive filter for a list of items. It is
-used by invoking `zeef#open()`. Zeef does not define any command or mapping.
-The arguments of the function are:
+Zeef is a minimalist dynamic interactive filter for a list of items. Think of it
+as a ~poo…~ wise man's CtrlP. It is used by invoking `zeef#open()`. Zeef does
+not define any command or mapping. The arguments of the function are:
 
 1. A list of items;
 2. The name of a callback function;
