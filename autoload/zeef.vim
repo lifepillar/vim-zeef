@@ -2,7 +2,7 @@
 " Author:      Lifepillar <lifepillar@lifepillar.me>
 " Maintainer:  Lifepillar <lifepillar@lifepillar.me>
 " License:     Public domain
-" Description: Zeef is Dutch for sieve, I've been told
+" Description: Zeef is Dutch for sieve, I am told
 
 " Internal state {{{
 
