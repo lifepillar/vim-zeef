@@ -36,8 +36,8 @@ Try it:
 <
 Start typing to filter the list. Press <enter> to invoke the callback with the
 selected item(s) (multiple selections are possible—see below). Press <esc> to
-cancel. This is the complete list of keys you can use when the Zeef buffer is
-open (these can be customized with |g:zeef_keymap|):
+cancel. The following is the complete list of keys you can use when the Zeef
+buffer is open (these can be customized with |g:zeef_keymap|):
 
 - <c-k> or <up>: move up one line;
 - <c-j> or <down>: move down one line;

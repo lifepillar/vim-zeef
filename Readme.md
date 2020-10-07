@@ -20,8 +20,8 @@ call zeef#open(['Jan', 'Jun', 'Jul'], 'Callback', 'Choose')
 
 Start typing to filter the list. Press Enter to invoke the callback with the
 selected item(s) (multiple selections are possible—see below). Press Esc to
-cancel. This is the complete list of keys you can use when the Zeef buffer is
-open (these can be customized with `g:zeef_keymap`):
+cancel. The following is the complete list of keys you can use when the Zeef
+buffer is open (these can be customized with `g:zeef_keymap`):
 
 - CTRL-K or up arrow: move up one line;
 - CTRL-J or down arrow: move down one line;
