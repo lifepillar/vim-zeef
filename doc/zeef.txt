@@ -34,10 +34,10 @@ Try it:
 	:endf
 	:call zeef#open(['Jan', 'Jun', 'Jul'], 'Callback', 'Choose')
 <
-Start typing to dynamically filter the list. Press <enter> to invoke the
-callback with the selected item(s) (multiple selections are possible—see
-below). Press <esc> to cancel. This is the complete list of keys you can use
-when the Zeef filter is open (these can be customized with |g:zeef_keymap|):
+Start typing to filter the list. Press <enter> to invoke the callback with the
+selected item(s) (multiple selections are possible—see below). Press <esc> to
+cancel. This is the complete list of keys you can use when the Zeef buffer is
+open (these can be customized with |g:zeef_keymap|):
 
 - <c-k> or <up>: move up one line;
 - <c-j> or <down>: move down one line;
@@ -47,7 +47,7 @@ when the Zeef filter is open (these can be customized with |g:zeef_keymap|):
 - <c-z>: select/deselect the current line;
 - <esc>: close Zeef without performing any action;
 - <enter>: accept the current choice;
-- <c-s>, <c-v>, <c-t>: like <enter>, but also opens a split, vertical split or
+- <c-s>, <c-v>, <c-t>: like <enter>, but also open a split, vertical split or
   tab.
 
 How does Zeef differ from the several similar plugins already out there, you
