@@ -77,6 +77,8 @@ To change the color scheme:
 ```
 
 Use the source code as the authoritative reference. It's not that complicated.
+And don't forget to read the full (albeit short) documentation: see `:help
+zeef.txt`.
 
 Ah, before you ask: the answer is no. Zeef does *not* perform fuzzy search,
 approximate search, match rankings, or other esoteric stuff. All that is out
