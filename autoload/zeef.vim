@@ -9,7 +9,7 @@
 " The prompt
 const s:prompt = get(g:, 'zeef_prompt', '> ')
 
-" Finder's buffer number
+" Zeef's buffer number
 let s:bufnr = -1
 
 " Window layout to restore when the finder is closed
