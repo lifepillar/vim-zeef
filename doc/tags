@@ -1,0 +1,13 @@
+'g:Zeef_regexp'	zeef.txt	/*'g:Zeef_regexp'*
+'g:zeef_ctags_types'	zeef.txt	/*'g:zeef_ctags_types'*
+'g:zeef_height'	zeef.txt	/*'g:zeef_height'*
+'g:zeef_keymap'	zeef.txt	/*'g:zeef_keymap'*
+'g:zeef_name'	zeef.txt	/*'g:zeef_name'*
+'g:zeef_prompt'	zeef.txt	/*'g:zeef_prompt'*
+'g:zeef_skip_first'	zeef.txt	/*'g:zeef_skip_first'*
+not	zeef.txt	/*not*
+zeef-contents	zeef.txt	/*zeef-contents*
+zeef-customization	zeef.txt	/*zeef-customization*
+zeef-introduction	zeef.txt	/*zeef-introduction*
+zeef-requirements	zeef.txt	/*zeef-requirements*
+zeef.txt	zeef.txt	/*zeef.txt*
