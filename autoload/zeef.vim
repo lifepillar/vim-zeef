@@ -331,8 +331,8 @@ let s:colors = []
 
 fun! zeef#colorscheme()
   if empty(s:colors)
-    let s:colors = map(globpath(&runtimepath, "colors/*.vim", v:false, v:true) , 'fnamemodify(v:val, ":t:r")')
-    let s:colors += map(globpath(&packpath, "pack/*/{opt,start}/*/colors/*.vim", v:false, v:true) , 'fnamemodify(v:val, ":t:r")')
+    let s:colors = map(globpath(&runtimepath, "colors/*.vim", 0, 1) , 'fnamemodify(v:val, ":t:r")')
+    let s:colors += map(globpath(&packpath, "pack/*/{opt,start}/*/colors/*.vim", 0, 1) , 'fnamemodify(v:val, ":t:r")')
   endif
   call zeef#open(s:colors, 's:set_colorscheme', 'Choose colorscheme')
 endf
