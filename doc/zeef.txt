@@ -19,13 +19,13 @@ CONTENTS				*zeef-contents*
 ==============================================================================
 1. Introduction				*zeef-introduction*
 
-Zeef is a minimalist dynamic interactive filter for a |List| of items. It is
-used by invoking `zeef#open()`. Zeef does not define any command or mapping.
-The arguments of the function are:
+Zeef is a minimalist dynamic interactive filter for a |List| of items. It does
+not define any command or mapping. Zeef is used by invoking `zeef#open()`. The
+arguments of the function are:
 
-1. A |List| of items;
-2. The name of a callback function;
-3. The text for the command line prompt.
+1. a |List| of items;
+2. the name of a callback function;
+3. the text for the command line prompt.
 
 Try it:
 >
@@ -45,10 +45,10 @@ buffer is open (these can be customized with |g:zeef_keymap|):
 - <c-b>, <c-f>, <c-d>, <c-u>, <c-e>, <c-y>: usual movements;
 - <c-l>: clear the prompt;
 - <c-z>: select/deselect the current line;
-- <esc>: close Zeef without performing any action;
+- <esc>, <c-c>: close Zeef without performing any action;
 - <enter>: accept the current choice;
-- <c-s>, <c-v>, <c-t>: like <enter>, but also open a split, vertical split or
-  tab.
+- <c-s>, <c-v>, <c-t>: like <enter>, but also open a horizontal split,
+  vertical split or tab.
 
 How does Zeef differ from the several similar plugins already out there, you
 ask? The implementation is likely the simplest possible: as you type,
@@ -79,9 +79,9 @@ other plugins, after all.
 2. Requirements					*zeef-requirements*
 
 Zeef is 100% Vim script. It should work in Vim 7.4 or later. The only recent
-feature that Zeef uses is |text-properties| (to highlight selected matches),
-but it works without it (you will still be able to perform multiple
-selections, but you will not get any visual feedback).
+feature that Zeef uses is |text-properties|, to highlight selected matches. It
+will work even without that: you will still be able to perform multiple
+selections, but you will not get any visual feedback.
 
 =============================================================================
 4. Customization				*zeef-customization*
