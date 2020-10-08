@@ -133,6 +133,10 @@ endf
 fun! zeef#accept_tabnew()
   return s:accept('tabnew')
 endf
+
+fun! s:noop()
+  return 0
+endf
 " }}}
 " Keymap {{{
 let s:keymap = extend({
@@ -244,7 +248,7 @@ fun! zeef#open(items, callback, label) abort
     elseif s:keypressed == "\<esc>"
       return zeef#close('')
     else
-      if get(s:keymap, s:keypressed, { -> 0 })()
+      if get(s:keymap, s:keypressed, function('s:noop'))()
         return
       endif
     endif
