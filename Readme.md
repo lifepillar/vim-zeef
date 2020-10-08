@@ -33,7 +33,7 @@ be customized with `g:zeef_keymap`):
 - CTRL-B, CTRL-F, CTRL-D, CTRL-U, CTRL-E, CTRL-Y: usual movements;
 - CTRL-L: clear the prompt;
 - CTRL-Z: select/deselect the current line;
-- Esc: close Zeef without performing any action;
+- Esc, CTRL-C: close Zeef without performing any action;
 - Enter: accept the current choice;
 - CTRL-S, CTRL-V, CTRL-T: like Enter, but also open a split, vertical split or
   tab.
