@@ -35,8 +35,8 @@ be customized with `g:zeef_keymap`):
 - CTRL-Z: select/deselect the current line;
 - Esc, CTRL-C: close Zeef without performing any action;
 - Enter: accept the current choice;
-- CTRL-S, CTRL-V, CTRL-T: like Enter, but also open a split, vertical split or
-  tab.
+- CTRL-S, CTRL-V, CTRL-T: like Enter, but also open a horizonal split, vertical
+  split or tab.
 
 How does Zeef differ from the several similar plugins already out there, you
 ask? The implementation is likely *the simplest possible*: as you type,
