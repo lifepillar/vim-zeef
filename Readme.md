@@ -5,9 +5,9 @@ as a ~~poo…~~ wise man's CtrlP. 100% Vim script, pure autoload plugin, it does
 not define any command or mapping. It is used by invoking `zeef#open()`. The
 arguments of the function are:
 
-1. A list of items;
-2. The name of a callback function;
-3. The text for the command line prompt.
+1. a list of items;
+2. the name of a callback function;
+3. the text for the command line prompt.
 
 Try it:
 
