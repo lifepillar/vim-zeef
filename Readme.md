@@ -16,11 +16,11 @@ fun Callback(result)
   echo a:result
 endf
 
-call zeef#open(['January', 'July', 'Lily', 'Nucleus'], 'Callback', 'Choose')
+call zeef#open(['January', 'July', 'Lily', 'Lyric', 'Nucleus'], 'Callback', 'Choose')
 ```
 
 Start typing to filter the list. You may anchor the pattern at the start or at
-the end with `^` and '$', respectively, and you may use `*` as a glob pattern
+the end with `^` and `$`, respectively, and you may use `*` as a glob pattern
 (if you do not like it this way, you may write your own filter: see `:help
 g:Zeef_regexp`). Press Enter to invoke the callback with the selected item(s)
 (multiple selections are possible—see below). Press Esc to cancel. The following
