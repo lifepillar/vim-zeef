@@ -287,7 +287,7 @@ endf
 " props is a dictionary with the following keys:
 "   - unlisted: when set to 1, show also unlisted buffers
 fun! zeef#buffer(props)
-  let l:buffers = map(split(execute('ls' .. (get(a:props, 'unlisted', 0) ? '!' : '')), "\n"), { i,v -> substitute(v, '"\(.*\)"\s*line\s*\d\+$', '\1', '') })
+  let l:buffers = map(split(execute('ls' .. (get(a:props, 'unlisted', 0) ? '!' : '')), "\n"), 'substitute(v:val, ''"\(.*\)"\s*line\s*\d\+$'', ''\1'', "")')
   call zeef#open(l:buffers, 's:switch_to_buffer', 'Switch buffer')
 endf
 
