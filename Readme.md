@@ -16,13 +16,16 @@ fun Callback(result)
   echo a:result
 endf
 
-call zeef#open(['Jan', 'Jun', 'Jul'], 'Callback', 'Choose')
+call zeef#open(['January', 'July', 'Lily', 'Nucleus'], 'Callback', 'Choose')
 ```
 
-Start typing to filter the list. Press Enter to invoke the callback with the
-selected item(s) (multiple selections are possible—see below). Press Esc to
-cancel. The following is the complete list of keys you can use when the Zeef
-buffer is open (these can be customized with `g:zeef_keymap`):
+Start typing to filter the list. You may anchor the pattern at the start or at
+the end with `^` and '$', respectively, and you may use `*` as a glob pattern
+(if you do not like it this way, you may write your own filter: see `:help
+g:Zeef_regexp`). Press Enter to invoke the callback with the selected item(s)
+(multiple selections are possible—see below). Press Esc to cancel. The following
+is the complete list of keys you can use when the Zeef buffer is open (these can
+be customized with `g:zeef_keymap`):
 
 - CTRL-K or up arrow: move up one line;
 - CTRL-J or down arrow: move down one line;
