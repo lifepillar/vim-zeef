@@ -74,7 +74,7 @@ To browse `v:oldfiles`:
 :call zeef#args(v:oldfiles)
 ```
 
-To change the color scheme:
+To choose a color scheme:
 
 ```vim
 :call zeef#colorscheme()
