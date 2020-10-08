@@ -1,8 +1,8 @@
 # Zeef
 
 Zeef is a minimalist dynamic interactive filter for a list of items. Think of it
-as a ~~poo…~~ wise man's CtrlP. 100% Vim script, pure autoload plugin. It is
-used by invoking `zeef#open()`. Zeef does not define any command or mapping. The
+as a ~~poo…~~ wise man's CtrlP. 100% Vim script, pure autoload plugin, it does
+not define any command or mapping. It is used by invoking `zeef#open()`. The
 arguments of the function are:
 
 1. A list of items;
