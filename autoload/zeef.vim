@@ -262,19 +262,19 @@ endf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Simple path filters
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-fun! s:set_arglist(result)
+fun! zeef#set_arglist(result)
   execute "args" join(map(a:result, 'fnameescape(v:val)'))
 endf
 
 " Filter a list of paths and populate the arglist with the selected items.
 fun! zeef#args(paths)
-  call zeef#open(a:paths, 's:set_arglist', 'Choose files')
+  call zeef#open(a:paths, 'zeef#set_arglist', 'Choose files')
 endf
 
 " Ditto, but use the paths in the specified directory
 fun! zeef#files(...) " ... is an optional directory
   let l:dir = (a:0 > 0 ? a:1 : '.')
-  call zeef#open(systemlist(executable('rg') ? 'rg --files ' .. l:dir : 'find ' .. l:dir .. ' -type f'), 's:set_arglist', 'Choose files')
+  call zeef#open(systemlist(executable('rg') ? 'rg --files ' .. l:dir : 'find ' .. l:dir .. ' -type f'), 'zeef#set_arglist', 'Choose files')
 endf
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
