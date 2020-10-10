@@ -364,7 +364,7 @@ fun! zeef#tags(path, ft)
 endf
 
 fun! s:jump_to_tag(result)
-  let [l:tag, l:bufname, l:line] = split(a:result[0], '\s\+')
+  let [l:tag, l:bufname, l:line] = split(a:result[0], '\t')
   execute "buffer" "+" .. l:line l:bufname
 endf
 
