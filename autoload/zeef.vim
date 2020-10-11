@@ -73,7 +73,7 @@ fun! zeef#passthrough()
 endf
 
 fun! zeef#clear()
-  call setline(1, s:items)
+  silent undo 1
   let s:undoseq = []
   let s:filter = ''
   return 0
@@ -175,6 +175,11 @@ fun! s:redraw(prompt)
   echo a:prompt
 endf
 
+fun! zeef#statusline()
+  return '%#ZeefName# ' .. get(g:, 'zeef_name', 'Zeef') .. ' %* %l of %L'
+        \ .. (empty(s:result) ? '' : printf(" (%d selected)", len(s:result)))
+endf
+
 " Interactively filter a list of items as you type,
 " and execute an action on the selected item.
 "
@@ -186,6 +191,8 @@ fun! zeef#open(items, callback, label) abort
   let s:items = a:items
   let s:callback = a:callback
   let s:result = []
+  let s:undoseq = []
+  let s:filter = ''
 
   " botright 10new may not set the right height, e.g., if the quickfix window is open
   execute printf("botright :1new | %dwincmd +", get(g:, 'zeef_height', 10) - 1)
@@ -195,15 +202,14 @@ fun! zeef#open(items, callback, label) abort
         \  foldmethod=manual nofoldenable nospell
         \  nowrap scrolloff=0 winfixheight
         \  cursorline nonumber norelativenumber
-  execute 'setlocal statusline=%#ZeefName#\ ' .. get(g:, 'zeef_name', 'Zeef') .. '\ %*\ %l\ of\ %L'
+        \  statusline=%!zeef#statusline()
 
   let s:bufnr = bufnr('%')
+  call setline(1, s:items)
 
   if has('textprop')
     call prop_type_add('_sel', { 'bufnr': s:bufnr, 'highlight': 'ZeefSelected' })
   endif
-
-  call zeef#clear()
 
   let s:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))
   let l:prompt = a:label .. s:prompt
