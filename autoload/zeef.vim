@@ -94,19 +94,61 @@ fun! zeef#close(action)
   return 1
 endf
 
+if has('textprop')
+  fun! s:mark(linenr)
+    call prop_add(a:linenr, 1,  { 'bufnr': s:bufnr, 'type': 'zeef', 'length': len(getline(a:linenr)) })
+  endf
+
+  fun! s:unmark(linenr)
+    call prop_remove({ 'bufnr': s:bufnr, 'type': 'zeef' }, a:linenr)
+  endf
+else
+  fun! s:mark(linenr)
+  endf
+
+  fun! s:unmark(linenr)
+  endf
+endif
+
 fun! zeef#toggle()
   let l:idx = index(s:result, getline('.'))
   if l:idx != -1
     call remove(s:result, l:idx)
-    if has('textprop')
-      call prop_remove({ 'bufnr': s:bufnr, 'type': '_sel' }, line('.'))
-    endif
+    call s:unmark(line('.'))
   else
     call add(s:result, getline('.'))
-    if has('textprop')
-      call prop_add(line('.'), 1,  { 'bufnr': s:bufnr, 'type': '_sel', 'length': len(getline('.')) })
-    endif
+    call s:mark(line('.'))
   endif
+  return 0
+endf
+
+fun! zeef#deselect_all()
+  call zeef#clear()
+  if has('textprop')
+    call prop_remove({ 'bufnr': s:bufnr, 'type': 'zeef', 'all': 1}, 1, line('$'))
+  endif
+  let s:result = []
+  return 0
+endf
+
+fun! zeef#deselect_current()
+  for l:linenr in range(1, line('$'))
+    let l:idx = index(s:result, getline(l:linenr))
+    if l:idx != -1
+      call remove(s:result, l:idx)
+      call s:unmark(l:linenr)
+    endif
+  endfor
+endf
+
+fun! zeef#select_current()
+  for l:linenr in range(1, line('$'))
+    let l:idx = index(s:result, getline(l:linenr))
+    if l:idx == -1
+      call add(s:result, getline(l:linenr))
+      call s:mark(l:linenr)
+    endif
+  endfor
   return 0
 endf
 
@@ -153,7 +195,10 @@ let s:keymap = extend({
       \ "\<c-f>":   function('zeef#passthrough'),
       \ "\<c-u>":   function('zeef#passthrough'),
       \ "\<c-l>":   function('zeef#clear'),
+      \ "\<c-g>":   function('zeef#deselect_all'),
       \ "\<c-z>":   function('zeef#toggle'),
+      \ "\<c-a>":   function('zeef#select_current'),
+      \ "\<c-r>":   function('zeef#deselect_current'),
       \ "\<enter>": function('zeef#accept'),
       \ "\<c-s>":   function('zeef#accept_split'),
       \ "\<c-v>":   function('zeef#accept_vsplit'),
@@ -208,7 +253,7 @@ fun! zeef#open(items, callback, label) abort
   call setline(1, s:items)
 
   if has('textprop')
-    call prop_type_add('_sel', { 'bufnr': s:bufnr, 'highlight': 'ZeefSelected' })
+    call prop_type_add('zeef', { 'bufnr': s:bufnr, 'highlight': 'ZeefSelected' })
   endif
 
   let s:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))

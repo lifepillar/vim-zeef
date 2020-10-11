@@ -44,7 +44,10 @@ buffer is open (these can be customized with |g:zeef_keymap|):
 - <left> and <right>: scroll horizontally;
 - <c-b>, <c-f>, <c-d>, <c-u>, <c-e>, <c-y>: usual movements;
 - <c-l>: clear the prompt;
-- <c-z>: select/deselect the current line;
+- <c-g>: clear the prompt and deselect all items;
+- <c-z>: toggle the selection of the current line;
+- <c-a>: select all currently filtered lines;
+- <c-r>: deselect all currently filtered lines;
 - <esc>, <c-c>: close Zeef without performing any action;
 - <enter>: accept the current choice;
 - <c-s>, <c-v>, <c-t>: like <enter>, but also open a horizontal split,
