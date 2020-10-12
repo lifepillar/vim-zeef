@@ -207,11 +207,6 @@ let s:keymap = extend({
 " }}}
 " Main interface {{{
 
-" Highlight group for matches
-hi default      ZeefMatch term=bold cterm=bold gui=bold
-hi default link ZeefName StatusLine
-hi default      ZeefSelected term=reverse cterm=reverse gui=reverse
-
 fun! s:redraw(prompt)
   if !empty(s:filter)
     call matchadd('ZeefMatch', '\c' .. s:Regexp(s:filter))
@@ -238,6 +233,10 @@ fun! zeef#open(items, callback, label) abort
   let s:result = []
   let s:undoseq = []
   let s:filter = ''
+
+  hi default      ZeefMatch term=bold cterm=bold gui=bold
+  hi default link ZeefName StatusLine
+  hi default      ZeefSelected term=reverse cterm=reverse gui=reverse
 
   " botright 10new may not set the right height, e.g., if the quickfix window is open
   execute printf("botright :1new | %dwincmd +", get(g:, 'zeef_height', 10) - 1)
