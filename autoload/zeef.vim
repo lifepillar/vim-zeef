@@ -224,6 +224,10 @@ fun! zeef#keypressed()
   return s:keypressed
 endf
 
+fun! zeef#result()
+  return s:result
+endf
+
 " Interactively filter a list of items as you type,
 " and execute an action on the selected item.
 "
