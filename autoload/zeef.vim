@@ -251,10 +251,11 @@ fun! zeef#open(items, callback, label) abort
 
   setlocal buftype=nofile bufhidden=wipe nobuflisted
         \  modifiable noreadonly noswapfile noundofile
-        \  foldmethod=manual nofoldenable nospell
-        \  nowrap scrolloff=0 winfixheight
-        \  cursorline nonumber norelativenumber
+        \  foldmethod=manual nofoldenable nolist nospell
+        \  nowrap scrolloff=0 textwidth=0 winfixheight
+        \  cursorline nocursorcolumn nonumber norelativenumber
         \  statusline=%!zeef#statusline()
+  abclear <buffer>
 
   let s:bufnr = bufnr('%')
   call setline(1, s:items)
