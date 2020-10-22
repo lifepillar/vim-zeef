@@ -220,6 +220,10 @@ fun! zeef#statusline()
         \ .. (empty(s:result) ? '' : printf(" (%d selected)", len(s:result)))
 endf
 
+fun! zeef#keypressed()
+  return s:keypressed
+endf
+
 " Interactively filter a list of items as you type,
 " and execute an action on the selected item.
 "
