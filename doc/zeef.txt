@@ -125,6 +125,14 @@ Selects a color scheme.
 >
 	:call zeef#colorscheme()
 <
+						|zeef#files()|
+Filters the list of paths inside a specified directory and populate the
+arglist with the selected items. For example:
+>
+	:call zeef#files('~/.vim')
+<
+The path is optional: if not specified, the current directory is used.
+
 						|zeef#keypressed()|
 The most recently pressed key. You may use this function in your callback to
 determine how the Zeef buffer was dismissed. For example, suppose you want to
