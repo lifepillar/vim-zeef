@@ -9,7 +9,8 @@ arguments of the function are:
 2. the name of a callback function;
 3. the text for the command line prompt.
 
-Try it:
+(The function accepts an optional fourth argument to set up custom key mappings:
+see `:help zeef` for the details). Try this "zeef":
 
 ```vim
 fun Callback(result)
@@ -51,7 +52,7 @@ surprisingly well, unless your list is huge (hundreds of thousands of lines).
 What can you do with Zeef? Whatever you want! Zeef is not bloated with
 features that you will never use: it is for people who wish to implement their
 own functionality with minimal help. That said, Zeef does come with a few
-"sample applications":
+"sample applications" or "zeefs":
 
 - a buffer switcher;
 - a path filter;

@@ -8,6 +8,7 @@
 not	zeef.txt	/*not*
 zeef-contents	zeef.txt	/*zeef-contents*
 zeef-customization	zeef.txt	/*zeef-customization*
+zeef-functions	zeef.txt	/*zeef-functions*
 zeef-introduction	zeef.txt	/*zeef-introduction*
 zeef-requirements	zeef.txt	/*zeef-requirements*
 zeef.txt	zeef.txt	/*zeef.txt*
