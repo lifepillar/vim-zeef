@@ -249,7 +249,7 @@ fun! zeef#open(items, callback, label) abort
   " botright 10new may not set the right height, e.g., if the quickfix window is open
   execute printf("botright :1new | %dwincmd +", get(g:, 'zeef_height', 10) - 1)
 
-  setlocal buftype=nofile bufhidden=wipe nobuflisted
+  setlocal buftype=nofile bufhidden=wipe nobuflisted filetype=zeef
         \  modifiable noreadonly noswapfile noundofile
         \  foldmethod=manual nofoldenable nolist nospell
         \  nowrap scrolloff=0 textwidth=0 winfixheight
