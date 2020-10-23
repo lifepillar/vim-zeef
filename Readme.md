@@ -26,7 +26,8 @@ the end with `^` and `$`, respectively, and you may use `*` as a glob pattern
 g:Zeef_regexp`). Press Enter to invoke the callback with the selected item(s)
 (multiple selections are possible—see below). Press Esc to cancel. The following
 is the complete list of keys you can use when the Zeef buffer is open (these can
-be customized with `g:zeef_keymap`):
+be customized with `g:zeef_keymap` or by passing custom mappings to
+`zeef#open()`):
 
 - CTRL-K or up arrow: move up one line;
 - CTRL-J or down arrow: move down one line;
