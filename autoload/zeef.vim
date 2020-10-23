@@ -181,7 +181,7 @@ fun! s:noop()
 endf
 " }}}
 " Keymap {{{
-let s:keymap = extend({
+let s:default_keymap = extend({
       \ "\<c-k>":   function('zeef#up'),
       \ "\<up>":    function('zeef#up'),
       \ "\<c-j>":   function('zeef#down'),
@@ -234,7 +234,8 @@ endf
 " items: A List of items to be filtered
 " callback: A function, funcref, or lambda to be called on the selected item(s)
 " label: A name for the finder's prompt
-fun! zeef#open(items, callback, label) abort
+" ...: An optional keymap
+fun! zeef#open(items, callback, label, ...) abort
   let s:winrestsize = winrestcmd()
   let s:items = a:items
   let s:callback = a:callback
@@ -259,6 +260,8 @@ fun! zeef#open(items, callback, label) abort
 
   let s:bufnr = bufnr('%')
   call setline(1, s:items)
+
+  let s:keymap = extend(copy(s:default_keymap), a:0 > 0 ? a:1 : {})
 
   if has('textprop')
     call prop_type_add('zeef', { 'bufnr': s:bufnr, 'highlight': 'ZeefSelected' })
