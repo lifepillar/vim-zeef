@@ -1,4 +1,4 @@
-*zeef.txt*	For Vim version 8.2	Last change: 2020 Oct 07
+*zeef.txt*	For Vim version 8.2	Last change: 2020 Nov 15
 
 			______          ________                         ~
 			___  /_____________  __/                         ~
@@ -7,7 +7,7 @@
 			/____/\___/\___//_/                              ~
 
 Author:  Lifepillar <https://github.com/lifepillar>
-License: Public Domain
+License: MIT
 
 ==============================================================================
 CONTENTS				*zeef-contents*
