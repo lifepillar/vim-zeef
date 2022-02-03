@@ -419,7 +419,7 @@ const s:types = extend({
       \ }, get(g:, 'zeef_ctags_types', {}))
 
 fun! zeef#tags(path, ft)
-  return systemlist(printf('ctags -f - --sort=no --excmd=number --fields= --extra= --file-scope=yes --language-force=%s %s',
+  return systemlist(printf('ctags -f - --sort=no --excmd=number --fields= --extras=+F --language-force=%s %s',
         \ get(s:types, a:ft, a:ft),
         \ shellescape(expand(a:path))
         \ ))
