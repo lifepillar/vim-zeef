@@ -433,7 +433,6 @@ fun! s:jump_to_tag(result)
 endf
 
 fun! zeef#buffer_tags()
-  echomsg zeef#tags('%', &ft)
   call zeef#open(
         \ map(zeef#tags('%', &ft), {_, v -> substitute(v, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', '')}),
         \ 's:jump_to_tag',
