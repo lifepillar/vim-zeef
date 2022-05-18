@@ -425,17 +425,20 @@ fun! zeef#tags(path, ft)
         \ ))
 endf
 
-fun! s:jump_to_tag(result)
-  if a:result[0] =~# '^.*\t.*\t.*$'
-    let [l:tag, l:bufname, l:line] = split(a:result[0], '\t')
-    execute "buffer" "+" .. l:line l:bufname
+fun! s:jump_to_tag(result, bufname)
+  if a:result[0] =~# '^\d\+'
+    let [l:line, l:tag] = split(a:result[0], '\s\+')
+    execute "buffer" "+" .. l:line a:bufname
   endif
 endf
 
 fun! zeef#buffer_tags()
+  let l:bufname = bufname("%")
   call zeef#open(
-        \ map(zeef#tags('%', &ft), {_, v -> substitute(v, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', '')}),
-        \ 's:jump_to_tag',
+        \ map(zeef#tags(l:bufname, &ft),
+        \      { _, v -> substitute(v, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', '') }
+        \    ),
+        \ { x -> s:jump_to_tag(x, l:bufname) },
         \ 'Choose tag'
         \ )
 endf
