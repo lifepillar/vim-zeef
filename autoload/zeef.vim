@@ -5,7 +5,6 @@
 " Description: Zeef is Dutch for sieve, I am told
 
 " Internal state {{{
-
 " The prompt
 const s:prompt = get(g:, 'zeef_prompt', '> ')
 
@@ -402,6 +401,9 @@ endf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Buffer tags (using Ctags)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Ctags binary
+const s:ctags = executable("uctags") ? "uctags" : "ctags"
+
 " Adapted from CtrlP's buffertag.vim
 const s:types = extend({
       \ 'aspperl':    'asp',
@@ -419,7 +421,7 @@ const s:types = extend({
       \ }, get(g:, 'zeef_ctags_types', {}))
 
 fun! zeef#tags(path, ft)
-  return systemlist(printf('ctags -f - --sort=no --excmd=number --fields= --extras=+F --language-force=%s %s',
+  return systemlist(printf(s:ctags .. ' -f - --sort=no --excmd=number --fields= --extras=+F --language-force=%s %s',
         \ get(s:types, a:ft, a:ft),
         \ shellescape(expand(a:path))
         \ ))
