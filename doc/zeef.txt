@@ -141,7 +141,7 @@ when CTRL-D is pressed. A slightly simplified definition may look as follows:
 >
 	fun! Buffers() abort
 	  let l:buffers = split(execute('ls'), "\n")
-	  call zeef#open(l:buffers, 'Callback', 'Choose', 
+	  call zeef#open(l:buffers, 'Callback', 'Choose',
 	      \ { "\<c-d>": function('zeef#accept') })
 	endfun
 
@@ -184,13 +184,13 @@ to the code shown in |zeef#keypressed()| is the following:
 	  endfor
 	  return 1 " This MUST return 1 if you close Zeef
 	endf
-	
+
 	fun! Buffers() abort
 	  let l:buffers = split(execute('ls'), "\n")
 	  call zeef#open(l:buffers, 'Callback', 'Choose',
 	        \ { "\<c-d>": function('DeleteBuffers') })
 	endfun
-	
+
 	fun! Callback(result) abort
 	  echo "Do smth else with result"
 	endfun
@@ -249,8 +249,8 @@ The symbol(s) to be used for the command line prompt:
 A function, funcref, or lambda, which receives as input the text typed by the
 user and must return a |'magic'| regular expression to filter the list. The
 default function behaves mostly like globbing, except that ^ and $ can be used
-to anchor a pattern. All characters are matched literally except ^, $, and *;
-the latter matches zero 0 more characters.
+to anchor a pattern. All characters are matched literally except ^, $, and the
+wildchar (see below); the latter matches zero 0 more characters.
 
 Note the capital Z of this option!
 
@@ -260,4 +260,18 @@ typed.
 >
 	let g:zeef_skip_first = 0
 <
+						*'g:zeef_wildchar'*
+The character key that must be interpreted as a wildchar, that is, a character
+that matches zero or more arbitrary characters.
+>
+	let g:zeef_wildchar = ' '
+<
+The default wildchar is the space, because the space bar is
+comfortable to type and usually one does not care about matching spaces.
+But if you want to use, say, a period as a wildchar, then add
+>
+	let g:zeef_wildchar = '.'
+<
+to your |vimrc|.
+
  vim:tw=78:ts=8:noet:ft=help:norl:

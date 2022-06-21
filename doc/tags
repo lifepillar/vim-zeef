@@ -5,6 +5,7 @@
 'g:zeef_name'	zeef.txt	/*'g:zeef_name'*
 'g:zeef_prompt'	zeef.txt	/*'g:zeef_prompt'*
 'g:zeef_skip_first'	zeef.txt	/*'g:zeef_skip_first'*
+'g:zeef_wildchar'	zeef.txt	/*'g:zeef_wildchar'*
 not	zeef.txt	/*not*
 zeef-contents	zeef.txt	/*zeef-contents*
 zeef-customization	zeef.txt	/*zeef-customization*

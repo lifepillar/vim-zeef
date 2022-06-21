@@ -37,10 +37,10 @@ let s:undoseq = []
 " Default regexp filter.
 "
 " This behaves mostly like globbing, except that ^ and $ can be used to anchor
-" a pattern. All characters are matched literally except ^, $, and *; the
-" latter matches zero 0 more characters.
+" a pattern. All characters are matched literally except ^, $, and the
+" wildchar; the latter matches zero 0 more characters.
 fun! s:default_regexp(input)
-  return substitute(escape(a:input, '~.\[:'), '\*', '.*', 'g')
+  return substitute(escape(a:input, '~.\[:'), get(g:, 'zeef_wildchar', ' '), '.*', 'g')
 endf
 
 " The function used to generate the filter
