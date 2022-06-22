@@ -21,13 +21,14 @@ call zeef#open(['January', 'July', 'Lily', 'Lyric', 'Nucleus'], 'Callback', 'Cho
 ```
 
 Start typing to filter the list. You may anchor the pattern at the start or at
-the end with `^` and `$`, respectively, and you may use `*` as a glob pattern
-(if you do not like it this way, you may write your own filter: see `:help
-g:Zeef_regexp`). Press Enter to invoke the callback with the selected item(s)
-(multiple selections are possible—see below). Press Esc to cancel. The following
-is the complete list of keys you can use when the Zeef buffer is open (these can
-be customized with `g:zeef_keymap` or by passing custom mappings to
-`zeef#open()`):
+the end with `^` and `$`, respectively, and you may use the space character as
+a glob pattern: if you do not like it this way, you may set `g:zeef_wildchar`
+to your preferred character (with few limitations) or even write your own
+filter: see `:help g:Zeef_regexp`. Press Enter to invoke the callback with the
+selected item(s) (multiple selections are possible—see below). Press Esc to
+cancel. The following is the complete list of keys you can use when the Zeef
+buffer is open (these can be customized with `g:zeef_keymap` or by passing
+custom mappings to `zeef#open()`):
 
 - CTRL-K or up arrow: move up one line;
 - CTRL-J or down arrow: move down one line;
