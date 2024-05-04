@@ -1,447 +1,443 @@
-" Name:        Zeef
-" Author:      Lifepillar <lifepillar@lifepillar.me>
-" Maintainer:  Lifepillar <lifepillar@lifepillar.me>
-" License:     MIT
-" Description: Zeef is Dutch for sieve, I am told
+vim9script
 
-" Internal state {{{
-" The prompt
-const s:prompt = get(g:, 'zeef_prompt', '> ')
+# Requirements Check {{{
+if !has('popupwin') || !has('textprop') || v:version < 901
+  export def Open(
+      items: list<string>, F: func(list<string>) = null_function, promptLabel = ''
+      )
+    echomsg 'Zeef requires Vim 9.1 compiled with popupwin and textprop.'
+  enddef
+  finish
+endif
+# }}}
+# Settings and Internal State {{{
+var sName:           string             = get(g:, 'zeef_stl_name', 'Zeef9')
+var sHeight:         number             = get(g:, 'zeef_height', 10) - 1
+var sPrompt:         string             = get(g:, 'zeef_prompt', '> ')
+var sSkipFirst:      number             = get(g:, 'zeef_skip_first', 0)
+var sHorizScroll:    number             = get(g:, 'zeef_horizontal_scroll', 5)
+var sPopupMaxHeight: number             = 100
+var sBufnr:          number             = -1     # Zeef buffer number
+var sLabel:          string             = 'Zeef' # Prompt label
+var sInput:          string             = ''     # The user input
+var sKeyPress:       string             = ''     # Last key press
+var sResult:         list<string>       = []     # The selected items
+var sPopupId:        number             = -1     # ID of the selection popup (for multiple selection)
 
-" Zeef's buffer number
-let s:bufnr = -1
+# Stack of booleans that tells whether to undo when pressing backspace.
+# If the top of the stack is true then undo; if it is false, do not undo.
+var sUndoStack:  list<bool> = []
 
-" Window layout to restore when the finder is closed
-let s:winrestsize = {}
+# Commands to restore the window layout when Zeef's window is closed
+var sWinRestCmd: string = ''
+# }}}
+# Selection Popup {{{
+def SelectionPopupClosed(winId: number, result: any = '')
+  sPopupId = -1
+enddef
 
-" The items to be filtered
-let s:items = []
+def IsSelectionPopupVisible(): bool
+  return sPopupId > 0 && get(popup_getpos(sPopupId), 'visible', false)
+enddef
 
-" The selected items
-let s:result = []
-
-" The callback to be invoked on the selected items
-let s:callback = ''
-
-" The latest key press
-let s:keypressed = ''
-
-" Text used to filter the input list
-let s:filter = ''
-
-" Stack of 0s/1s that tells whether to undo when pressing backspace.
-" If the top of the stack is 1 then undo; if it is 0, do not undo.
-let s:undoseq = []
-
-" Default regexp filter.
-"
-" This behaves mostly like globbing, except that ^ and $ can be used to anchor
-" a pattern. All characters are matched literally except ^, $, and the
-" wildchar; the latter matches zero 0 more characters.
-fun! s:default_regexp(input)
-  return substitute(escape(a:input, '~.\[:'), get(g:, 'zeef_wildchar', ' '), '.*', 'g')
-endf
-
-" The function used to generate the filter
-let s:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))
-" }}}
-" Key actions {{{
-fun! zeef#up()
-  norm k
-  return 0
-endf
-
-fun! zeef#down()
-  norm j
-  return 0
-endf
-
-fun! zeef#right()
-  norm 5zl
-  return 0
-endf
-
-fun! zeef#left()
-  norm 5zh
-  return 0
-endf
-
-fun! zeef#passthrough()
-  execute "normal" s:keypressed
-  return 0
-endf
-
-fun! zeef#clear()
-  silent undo 1
-  let s:undoseq = []
-  let s:filter = ''
-  return 0
-endf
-
-fun! zeef#close(action)
-  if empty(s:result)
-    call add(s:result, getline('.'))
+def ShowSelectionPopup()
+  if sPopupId <= 0
+    sPopupId = popup_create(sResult, {
+      border: [1, 1, 1, 1],
+      borderchars: ['-', '|', '-', '|', '┌', '┐', '┘', '└'],
+      borderhighlight: ['Label'],
+      callback: SelectionPopupClosed,
+      close: 'button',
+      col: 1,
+      cursorline: false,
+      drag: false,
+      highlight: 'Identifier',
+      line: screenpos(bufwinid(sBufnr), 1, 1).row - 1,
+      minheight: 1,
+      maxheight: Min(sPopupMaxHeight, &lines - sHeight - 10),
+      padding: [0, 1, 0, 1],
+      pos: 'botleft',
+      resize: false,
+      scrollbar: true,
+      title: 'Selected Items',
+      minwidth: &columns - 5,
+      maxwidth: &columns - 5,
+      wrap: false,
+      zindex: 32000,
+    })
+  else
+    popup_settext(sPopupId, sResult)
+    popup_show(sPopupId)
   endif
-  wincmd p
-  execute "bwipe!" s:bufnr
-  execute s:winrestsize
-  if index(['split', 'vsplit', 'tabnew'], a:action) != -1
-    execute a:action
+enddef
+
+def HideSelectionPopup()
+  popup_hide(sPopupId)
+enddef
+
+def RefreshSelectionPopup()
+  if IsSelectionPopupVisible()
+    if len(sResult) > 0
+      popup_settext(sPopupId, sResult)
+    else
+      HideSelectionPopup()
+    endif
   endif
+enddef
+# }}}
+# Helper Function {{{
+def Min(m: number, n: number): number
+  return m < n ? m : n
+enddef
+
+def AddToSelection(lnum: number, allowDuplicates = false)
+  var line = getline(lnum)
+
+  if !allowDuplicates && index(sResult, line) != -1
+    return
+  endif
+
+  add(sResult, getline(lnum))
+
+  if len(sResult) > 0
+    ShowSelectionPopup()
+  endif
+enddef
+
+def RemoveFromSelection(lnum: number)
+  var line = getline(lnum)
+  var newResult: list<string> = []
+
+  for item in sResult
+    if item != line
+      newResult->add(item)
+    endif
+  endfor
+
+  sResult = newResult
+
+  RefreshSelectionPopup()
+enddef
+
+def EchoPrompt()
   redraw
   echo "\r"
-  return 1
-endf
+  echo sLabel .. sPrompt .. sInput
+enddef
 
-if has('textprop')
-  fun! s:mark(linenr)
-    call prop_add(a:linenr, 1,  { 'bufnr': s:bufnr, 'type': 'zeef', 'length': len(getline(a:linenr)) })
-  endf
+def EchoResult(items: list<string>)
+  echo sResult
+enddef
 
-  fun! s:unmark(linenr)
-    call prop_remove({ 'bufnr': s:bufnr, 'type': 'zeef' }, a:linenr)
-  endf
-else
-  fun! s:mark(linenr)
-  endf
+def FuzzyFilter(): number
+  var [lines, charpos, _] = matchfuzzypos(
+    getbufline(bufnr(), 1, line('$')), sInput, {}
+  )
 
-  fun! s:unmark(linenr)
-  endf
-endif
+  deletebufline(bufnr(), 1, '$')
+  setbufline(bufnr(), 1, lines)
 
-fun! zeef#toggle()
-  let l:idx = index(s:result, getline('.'))
-  if l:idx != -1
-    call remove(s:result, l:idx)
-    call s:unmark(line('.'))
-  else
-    call add(s:result, getline('.'))
-    call s:mark(line('.'))
-  endif
-  return 0
-endf
+  # Highlight matches
+  var i = 0
 
-fun! zeef#deselect_all()
-  call zeef#clear()
-  if has('textprop')
-    call prop_remove({ 'bufnr': s:bufnr, 'type': 'zeef', 'all': 1}, 1, line('$'))
-  endif
-  let s:result = []
-  return 0
-endf
-
-fun! zeef#deselect_current()
-  for l:linenr in range(1, line('$'))
-    let l:idx = index(s:result, getline(l:linenr))
-    if l:idx != -1
-      call remove(s:result, l:idx)
-      call s:unmark(l:linenr)
-    endif
-  endfor
-endf
-
-fun! zeef#select_current()
-  for l:linenr in range(1, line('$'))
-    let l:idx = index(s:result, getline(l:linenr))
-    if l:idx == -1
-      call add(s:result, getline(l:linenr))
-      call s:mark(l:linenr)
-    endif
-  endfor
-  return 0
-endf
-
-fun! s:accept(action)
-  call zeef#close(a:action)
-  if !empty(s:result)
-    call function(s:callback)(s:result)
-  endif
-  return 1
-endf
-
-fun! zeef#accept()
-  return s:accept('')
-endf
-
-fun! zeef#accept_split()
-  return s:accept('split')
-endf
-
-fun! zeef#accept_vsplit()
-  return s:accept('vsplit')
-endf
-
-fun! zeef#accept_tabnew()
-  return s:accept('tabnew')
-endf
-
-fun! s:noop()
-  return 0
-endf
-" }}}
-" Keymap {{{
-let s:default_keymap = extend({
-      \ "\<c-k>":   function('zeef#up'),
-      \ "\<up>":    function('zeef#up'),
-      \ "\<c-j>":   function('zeef#down'),
-      \ "\<down>":  function('zeef#down'),
-      \ "\<left>":  function('zeef#left'),
-      \ "\<right>": function('zeef#right'),
-      \ "\<c-b>":   function('zeef#passthrough'),
-      \ "\<c-d>":   function('zeef#passthrough'),
-      \ "\<c-e>":   function('zeef#passthrough'),
-      \ "\<c-y>":   function('zeef#passthrough'),
-      \ "\<c-f>":   function('zeef#passthrough'),
-      \ "\<c-u>":   function('zeef#passthrough'),
-      \ "\<c-l>":   function('zeef#clear'),
-      \ "\<c-g>":   function('zeef#deselect_all'),
-      \ "\<c-z>":   function('zeef#toggle'),
-      \ "\<c-a>":   function('zeef#select_current'),
-      \ "\<c-r>":   function('zeef#deselect_current'),
-      \ "\<enter>": function('zeef#accept'),
-      \ "\<c-s>":   function('zeef#accept_split'),
-      \ "\<c-v>":   function('zeef#accept_vsplit'),
-      \ "\<c-t>":   function('zeef#accept_tabnew'),
-      \ }, get(g:, "zeef_keymap", {}))
-" }}}
-" Main interface {{{
-
-fun! s:redraw(prompt)
-  if !empty(s:filter)
-    call matchadd('ZeefMatch', '\c' .. s:Regexp(s:filter))
-  endif
-  redraw
-  echo a:prompt
-endf
-
-fun! zeef#statusline()
-  return '%#ZeefName# ' .. get(g:, 'zeef_name', 'Zeef') .. ' %* %l of %L'
-        \ .. (empty(s:result) ? '' : printf(" (%d selected)", len(s:result)))
-endf
-
-fun! zeef#keypressed()
-  return s:keypressed
-endf
-
-fun! zeef#result()
-  return s:result
-endf
-
-" Interactively filter a list of items as you type,
-" and execute an action on the selected item.
-"
-" items: A List of items to be filtered
-" callback: A function, funcref, or lambda to be called on the selected item(s)
-" label: A name for the finder's prompt
-" ...: An optional keymap
-fun! zeef#open(items, callback, label, ...) abort
-  let s:winrestsize = winrestcmd()
-  let s:items = a:items
-  let s:callback = a:callback
-  let s:result = []
-  let s:undoseq = []
-  let s:filter = ''
-
-  hi default      ZeefMatch term=bold cterm=bold gui=bold
-  hi default link ZeefName StatusLine
-  hi default      ZeefSelected term=reverse cterm=reverse gui=reverse
-
-  " botright 10new may not set the right height, e.g., if the quickfix window is open
-  execute printf("botright :1new | %dwincmd +", get(g:, 'zeef_height', 10) - 1)
-
-  setlocal buftype=nofile bufhidden=wipe nobuflisted filetype=zeef
-        \  modifiable noreadonly noswapfile noundofile
-        \  foldmethod=manual nofoldenable nolist nospell
-        \  nowrap scrolloff=0 textwidth=0 winfixheight
-        \  cursorline nocursorcolumn nonumber norelativenumber
-        \  statusline=%!zeef#statusline()
-  abclear <buffer>
-
-  let s:bufnr = bufnr('%')
-  call setline(1, s:items)
-
-  let s:keymap = extend(copy(s:default_keymap), a:0 > 0 ? a:1 : {})
-
-  if has('textprop')
-    call prop_type_add('zeef', { 'bufnr': s:bufnr, 'highlight': 'ZeefSelected' })
-  endif
-
-  let s:Regexp = get(g:, 'Zeef_regexp', function('s:default_regexp'))
-  let l:prompt = a:label .. s:prompt
-  redraw
-  echo l:prompt
-
-  while 1
-    let &ro=&ro     " Force status line update
-    let l:error = 0 " Set to 1 when the input pattern is invalid
-    let s:keypressed = ''
-    call clearmatches()
-
-    try
-      let ch = getchar()
-    catch /^Vim:Interrupt$/  " CTRL-C
-      return zeef#close('')
-    endtry
-
-    let s:keypressed = (type(ch) == 0 ? nr2char(ch) : ch)
-
-    if ch >=# 0x20 " Printable character
-      let s:filter ..= s:keypressed
-      if strchars(s:filter) < get(g:, 'zeef_skip_first', 0)
-        call s:redraw(l:prompt .. s:filter)
-        continue
-      endif
-      let l:seq_old = get(undotree(), 'seq_cur', 0)
-      try
-        execute 'silent keeppatterns g!:\m' .. s:Regexp(s:filter) .. ':norm "_dd'
-      catch /^Vim\%((\a\+)\)\=:E/
-        let l:error = 1
-      endtry
-      let l:seq_new = get(undotree(), 'seq_cur', 0)
-      call add(s:undoseq, l:seq_new != l:seq_old) " seq_new != seq_old iff the buffer has changed
-      norm gg
-    elseif s:keypressed ==# "\<bs>" " Backspace
-      let s:filter = strcharpart(s:filter, 0, strchars(s:filter) - 1)
-      if (empty(s:undoseq) ? 0 : remove(s:undoseq, -1))
-        silent undo
-      endif
-      norm gg
-    elseif s:keypressed == "\<esc>"
-      return zeef#close('')
-    else
-      if get(s:keymap, s:keypressed, function('s:noop'))()
-        return
-      endif
-    endif
-
-    call s:redraw((l:error ? '[Invalid pattern] ' : '') .. l:prompt .. s:filter)
+  while i < len(charpos)
+    for k in charpos[i]
+      prop_add(i + 1, 1 + byteidx(lines[i], k), {
+        bufnr: sBufnr, type: 'zeefmatch', length: strlen(lines[i][k])
+      })
+    endfor
+    ++i
   endwhile
-endf
-" }}}
-" Sample applications {{{
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Simple path filters
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-fun! zeef#set_arglist(result)
-  execute "args" join(map(a:result, 'fnameescape(v:val)'))
-endf
+  return 0
+enddef
 
-" Filter a list of paths and populate the arglist with the selected items.
-fun! zeef#args(paths)
-  call zeef#open(a:paths, 'zeef#set_arglist', 'Choose files')
-endf
+def g:ZeefStatusLine(): string
+  return $'%#ZeefName# {sName} %* %l of %L' .. (empty(sResult) ? '' : $' ({len(sResult)} selected)')
+enddef
 
-" Ditto, but use the paths in the specified directory
-fun! zeef#files(...) " ... is an optional directory
-  let l:dir = (a:0 > 0 ? a:1 : '.')
-  call zeef#open(systemlist(executable('rg') ? 'rg --files ' .. l:dir : 'find ' .. l:dir .. ' -type f'), 'zeef#set_arglist', 'Choose files')
-endf
+def OpenZeefBuffer(items: list<string>): number
+  # botright 10new may not set the right height, e.g., if the quickfix window is open
+  execute $'botright :1new | :{sHeight}wincmd +'
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" A buffer switcher
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-fun! s:switch_to_buffer(result)
-  execute "buffer" matchstr(a:result[0], '^\s*\zs\d\+')
-endf
+  hi default link ZeefMatch Label
+  hi default link ZeefName StatusLine
 
-" props is a dictionary with the following keys:
-"   - unlisted: when set to 1, show also unlisted buffers
-fun! zeef#buffer(props)
-  let l:buffers = map(split(execute('ls' .. (get(a:props, 'unlisted', 0) ? '!' : '')), "\n"), 'substitute(v:val, ''"\(.*\)"\s*line\s*\d\+$'', ''\1'', "")')
-  call zeef#open(l:buffers, 's:switch_to_buffer', 'Switch buffer')
-endf
+  prop_type_add('zeefmatch', {bufnr: bufnr(), 'highlight': 'ZeefMatch'})
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Find in quickfix/location list
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-fun! s:jump_to_qf_entry(result)
-  execute "crewind" matchstr(a:result[0], '^\s*\d\+', '')
-endf
+  abclear <buffer>
+  setlocal
+        \ bufhidden=wipe
+        \ buftype=nofile
+        \ colorcolumn&
+        \ cursorline
+        \ filetype=zeef
+        \ foldmethod=manual
+        \ formatexpr=FuzzyFilter()
+        \ modifiable
+        \ nobuflisted
+        \ nocursorcolumn
+        \ nofoldenable
+        \ nolist
+        \ nonumber
+        \ noreadonly
+        \ norelativenumber
+        \ nospell
+        \ noswapfile
+        \ noundofile
+        \ nowrap
+        \ scrolloff=0
+        \ statusline=%!ZeefStatusLine()
+        \ textwidth=0
+        \ winfixheight
 
-fun! s:jump_to_loclist_entry(result)
-  execute "lrewind" matchstr(a:result[0], '^\s*\d\+', '')
-endf
+  setline(1, items)
 
-fun! zeef#qflist()
-  let l:qflist = getqflist()
-  if empty(l:qflist)
-    echo '[Zeef] Quickfix list is empty'
-    return
+  return bufnr()
+enddef
+
+def CloseSelectionPopup()
+  if sPopupId > 0
+    popup_close(sPopupId)
   endif
-  call zeef#open(split(execute('clist'), "\n"), 's:jump_to_qf_entry', 'Filter quickfix entry')
-endf
+  sPopupId = -1
+enddef
 
-fun! zeef#loclist(winnr)
-  let l:loclist = getloclist(a:winnr)
-  if empty(l:loclist)
-    echo '[Zeef] Location list is empty'
-    return
+def CloseZeefBuffer()
+  CloseSelectionPopup()
+  wincmd p
+  execute 'bwipe!' sBufnr
+  execute sWinRestCmd
+  sBufnr = -1
+  redraw
+  echo "\r"
+enddef
+# }}}
+# Actions {{{
+def Accept(): bool
+  if empty(sResult)
+    add(sResult, getline('.'))
   endif
-  call zeef#open(split(execute('llist'), "\n"), 's:jump_to_loclist_entry', 'Filter loclist entry')
-endf
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Find colorscheme
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-fun! s:set_colorscheme(result)
-  execute "colorscheme" a:result[0]
-endf
+  CloseZeefBuffer()
 
-let s:colors = []
+  return false
+enddef
 
-fun! zeef#colorscheme()
-  if empty(s:colors)
-    let s:colors = map(globpath(&runtimepath, "colors/*.vim", 0, 1) , 'fnamemodify(v:val, ":t:r")')
-    let s:colors += map(globpath(&packpath, "pack/*/{opt,start}/*/colors/*.vim", 0, 1) , 'fnamemodify(v:val, ":t:r")')
+def Cancel(): bool
+  CloseZeefBuffer()
+  sResult = []
+
+  return false
+enddef
+
+def Clear(): bool
+  silent undo 1
+
+  sUndoStack = []
+  sInput = ''
+
+  return true
+enddef
+
+def DeselectAll(): bool
+  sResult = []
+  popup_close(sPopupId)
+  sPopupId = -1
+
+  return true
+enddef
+
+def DeselectCurrent(): bool
+  var i = 1
+  var n = line('$')
+
+  while i <= n
+    RemoveFromSelection(i)
+    ++i
+  endwhile
+
+  return true
+enddef
+
+def MoveUp(): bool
+  normal k
+  return true
+enddef
+
+def Noop(): bool
+  return true
+enddef
+
+def Passthrough(): bool
+  execute 'normal' sKeyPress
+  return true
+enddef
+
+def ScrollLeft(): bool
+  execute $'normal {sHorizScroll}zh'
+  return true
+enddef
+
+def ScrollRight(): bool
+  execute $'normal {sHorizScroll}zl'
+  return true
+enddef
+
+def SelectCurrent(): bool
+  var i = 1
+  var n = line('$')
+
+  while i <= n
+    AddToSelection(i)
+    ++i
+  endwhile
+
+  return true
+enddef
+
+def SplitAccept(): bool
+  Accept()
+  split
+  return false
+enddef
+
+def TabNewAccept(): bool
+  Accept()
+  tabnew
+  return false
+enddef
+
+def Toggle(): bool
+  if index(sResult, getline(line('.'))) == -1
+    AddToSelection(line('.'))
+  else
+    RemoveFromSelection(line('.'))
   endif
-  call zeef#open(s:colors, 's:set_colorscheme', 'Choose colorscheme')
-endf
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Buffer tags (using Ctags)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Ctags binary
-const s:ctags = executable("uctags") ? "uctags" : "ctags"
+  return true
+enddef
 
-" Adapted from CtrlP's buffertag.vim
-const s:types = extend({
-      \ 'aspperl':    'asp',
-      \ 'aspvbs':     'asp',
-      \ 'cpp':        'c++',
-      \ 'cs':         'c#',
-      \ 'delphi':     'pascal',
-      \ 'expect':     'tcl',
-      \ 'mf':         'metapost',
-      \ 'mp':         'metapost',
-      \ 'rmd':        'rmarkdown',
-      \ 'csh':        'sh',
-      \ 'zsh':        'sh',
-      \ 'tex':        'latex',
-      \ }, get(g:, 'zeef_ctags_types', {}))
+def Undo(): bool
+  sInput = strcharpart(sInput, 0, strchars(sInput) - 1)
 
-fun! zeef#tags(path, ft)
-  return systemlist(printf(s:ctags .. ' -f - --sort=no --excmd=number --fields= --extras=+F --language-force=%s %s',
-        \ get(s:types, a:ft, a:ft),
-        \ shellescape(expand(a:path))
-        \ ))
-endf
-
-fun! s:jump_to_tag(result, bufname)
-  if a:result[0] =~# '^\d\+'
-    let [l:line, l:tag] = split(a:result[0], '\s\+')
-    execute "buffer" "+" .. l:line a:bufname
+  if !empty(sUndoStack) && remove(sUndoStack, -1)
+    silent undo
   endif
-endf
 
-fun! zeef#buffer_tags()
-  let l:bufname = bufname("%")
-  call zeef#open(
-        \ map(zeef#tags(l:bufname, &ft),
-        \      { _, v -> substitute(v, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', '') }
-        \    ),
-        \ { x -> s:jump_to_tag(x, l:bufname) },
-        \ 'Choose tag'
-        \ )
-endf
-" }}}
+  return true
+enddef
+
+def VertSplitAccept(): bool
+  Accept()
+  vsplit
+  return false
+enddef
+
+def ToggleSelected(): bool
+  if IsSelectionPopupVisible()
+    HideSelectionPopup()
+  else
+    ShowSelectionPopup()
+  endif
+  return true
+enddef
+# }}}
+# Key Map {{{
+var sKeyMap = {
+  "\<ScrollWheelDown>":  Passthrough,
+  "\<ScrollWheelLeft>":  Passthrough,
+  "\<ScrollWheelRight>": Passthrough,
+  "\<ScrollWheelUp>":    Passthrough,
+  "\<bs>":               Undo,
+  "\<c-a>":              SelectCurrent,
+  "\<c-b>":              Passthrough,
+  "\<c-d>":              Passthrough,
+  "\<c-e>":              Passthrough,
+  "\<c-f>":              Passthrough,
+  "\<c-g>":              DeselectAll,
+  "\<c-j>":              Passthrough,
+  "\<c-k>":              MoveUp,
+  "\<c-l>":              Clear,
+  "\<c-r>":              DeselectCurrent,
+  "\<c-s>":              SplitAccept,
+  "\<c-t>":              TabNewAccept,
+  "\<c-u>":              Passthrough,
+  "\<c-v>":              VertSplitAccept,
+  "\<c-w>":              ToggleSelected,
+  "\<c-y>":              Passthrough,
+  "\<c-z>":              Toggle,
+  "\<down>":             Passthrough,
+  "\<enter>":            Accept,
+  "\<esc>":              Cancel,
+  "\<left>":             ScrollLeft,
+  "\<right>":            ScrollRight,
+  "\<up>":               Passthrough,
+  '':                    Cancel,
+}
+# }}}
+# Event Processing  {{{
+def GetKeyPress(): string
+  try
+    return getcharstr()
+  catch /^Vim:Interrupt$/ # CTRL-C
+    return ''
+  endtry
+
+  return ''
+enddef
+
+def ProcessKeyPress(): bool
+  if sKeyMap->has_key(sKeyPress)
+    var keepGoing = sKeyMap[sKeyPress]()
+    return keepGoing
+  endif
+
+  # Skip other non-printable characters
+  if char2nr(sKeyPress[0]) == 0x80
+    return true
+  endif
+
+  sInput ..= sKeyPress
+
+  if strchars(sInput) > sSkipFirst
+    var old_seq = get(undotree(), 'seq_cur', 0)
+    normal gggqG
+    var new_seq = get(undotree(), 'seq_cur', 0)
+
+    add(sUndoStack, new_seq != old_seq) # new_seq != old_seq iff the buffer has changed
+  endif
+
+  return true
+enddef
+
+def EventLoop()
+  while true
+    redrawstatus
+
+    EchoPrompt()
+    sKeyPress = GetKeyPress()
+
+    if !ProcessKeyPress()
+      break
+    endif
+  endwhile
+enddef
+# }}}
+# Public Interface {{{
+export def Open(
+    items: list<string>, F: func(list<string>) = EchoResult, promptLabel = 'Zeef'
+    )
+  sLabel      = promptLabel
+  sInput      = ''
+  sResult     = []
+  sWinRestCmd = winrestcmd()
+  sBufnr      = OpenZeefBuffer(items)
+
+  EventLoop()
+
+  if !empty(sResult)
+    F(sResult)
+  endif
+enddef
+# }}}}
