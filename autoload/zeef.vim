@@ -6,20 +6,32 @@ if !has('popupwin') || !has('textprop') || v:version < 901
   finish
 endif
 # }}}
-# Settings and Internal State {{{
-var sStatusLineName:         string       = get(g:, 'zeef_stl_name', 'Zeef9')
-var sHeight:                 number       = get(g:, 'zeef_height', 10) - 1
-var sPrompt:                 string       = get(g:, 'zeef_prompt', '> ')
-var sSkipFirst:              number       = get(g:, 'zeef_skip_first', 0)
-var sHorizScroll:            number       = get(g:, 'zeef_horizontal_scroll', 5)
-var sPopupMaxHeight:         number       = get(g:, 'zeef_selection_popup_max_height', 100)
+# User Configuration {{{
+export var winheight       = get(g:, 'zeef_winheight',      10    )
+export var stlname         = get(g:, 'zeef_stlname',        'Zeef')
+export var prompt          = get(g:, 'zeef_prompt',         '❯❯ ' )
+export var skipfirst       = get(g:, 'zeef_skipfirst',      0     )
+export var sidescroll      = get(g:, 'zeef_sidescroll',     5     )
+export var popupmaxheight  = get(g:, 'zeef_popupmaxheight', 100   )
+
+class Config
+  static var WinHeight      = () => winheight
+  static var StatusLineName = () => stlname
+  static var Prompt         = () => prompt
+  static var SkipFirst      = () => skipfirst
+  static var SideScroll     = () => sidescroll
+  static var PopupMaxHeight = () => popupmaxheight
+endclass
+# }}}
+# Internal State {{{
 var sBufnr:                  number       = -1     # Zeef buffer number
-var sLabel:                  string       = 'Zeef' # Prompt label
 var sInput:                  string       = ''     # The user input
 var sKeyPress:               string       = ''     # Last key press
-var sResult:                 list<string> = []     # The selected items
+var sResult:                 list<string> = []     # The currently selected items
 var sFinish:                 bool         = false  # When true, exit the event loop
-var sPopupId:                number       = -1     # ID of the selection popup (for multiple selection)
+var sPopupId:                number       = -1     # ID of the selection popup
+# The following are set when opening Zeef
+var sLabel:                  string       = 'Zeef' # Prompt label
 var sMultipleSelection:      bool         = true   # Whether muliple selections are allowed
 var sDuplicateInsertion:     bool         = false  # Whether duplicate items in the result are allowed
 var sDuplicateDeletion:      bool         = true   # Whether all duplicates should be removed when one is removed
@@ -88,7 +100,7 @@ def EchoPrompt()
   redrawstatus
   redraw
   echo "\r"
-  echo sLabel .. sPrompt .. sInput
+  echo sLabel .. Config.Prompt() .. sInput
 enddef
 
 def EchoResult(items: list<string>)
@@ -119,12 +131,12 @@ def FuzzyFilter(): number
 enddef
 
 def! g:ZeefStatusLine(): string
-  return $'%#ZeefName# {sStatusLineName} %* %l of %L' .. (empty(sResult) ? '' : $' ({len(sResult)} selected)')
+  return $'%#ZeefName# {Config.StatusLineName()} %* %l of %L' .. (empty(sResult) ? '' : $' ({len(sResult)} selected)')
 enddef
 
 def OpenZeefBuffer(items: list<string>): number
   # botright 10new may not set the right height, e.g., if the quickfix window is open
-  execute $'botright :1new | :{sHeight}wincmd +'
+  execute $'botright :1new | :{Config.WinHeight()}wincmd +'
 
   hi default link ZeefMatch Label
   hi default link ZeefName StatusLine
@@ -232,7 +244,7 @@ def CreateSelectionPopup()
     highlight: 'ZeefPopupBorderColor',
     line: screenpos(bufwinid(sBufnr), 1, 1).row - 1,
     minheight: 1,
-    maxheight: Min(sPopupMaxHeight, &lines - sHeight - 10),
+    maxheight: Min(Config.PopupMaxHeight(), &lines - Config.WinHeight() - 10),
     padding: [0, 1, 0, 1],
     pos: 'botleft',
     resize: false,
@@ -322,11 +334,11 @@ def ActionPassthrough()
 enddef
 
 def ActionScrollLeft()
-  execute $'normal {sHorizScroll}zh'
+  execute $'normal {Config.SideScroll()}zh'
 enddef
 
 def ActionScrollRight()
-  execute $'normal {sHorizScroll}zl'
+  execute $'normal {Config.SideScroll()}zl'
 enddef
 
 def ActionSelectCurrent()
@@ -455,7 +467,7 @@ def ProcessKeyPress(key: string)
 
   sInput ..= key
 
-  if strchars(sInput) > sSkipFirst
+  if strchars(sInput) > Config.SkipFirst()
     var old_seq = get(undotree(), 'seq_cur', 0)
     normal gggqG
     var new_seq = get(undotree(), 'seq_cur', 0)
@@ -598,7 +610,7 @@ enddef
 const sCtagsBin = executable('uctags') ? 'uctags' : 'ctags'
 
 # Adapted from CtrlP's buffertag.vim
-const sCtagsTypes = extend({
+const sCtagsTypes = {
   'aspperl': 'asp',
   'aspvbs':  'asp',
   'cpp':     'c++',
@@ -611,10 +623,11 @@ const sCtagsTypes = extend({
   'csh':     'sh',
   'zsh':     'sh',
   'tex':     'latex',
-}, get(g:, 'zeef_ctags_types', {}))
+}
 
-def Tags(path: string, filetype: string, ctagsPath: string): list<string>
-  var language = get(sCtagsTypes, filetype, filetype)
+def Tags(path: string, filetype: string, ctagsPath: string, ctagsTypes: dict<string>): list<string>
+  echomsg ctagsTypes
+  var language = get(ctagsTypes, filetype, filetype)
   var filepath = shellescape(expand(path))
 
   return systemlist(
@@ -629,9 +642,9 @@ def JumpToTag(item: string, bufname: string)
   endif
 enddef
 
-export def BufferTags(ctagsPath = sCtagsBin)
+export def BufferTags(ctagsTypes: dict<string> = {}, ctagsPath = sCtagsBin)
   var bufname = bufname("%")
-  var tags = Tags(bufname, &ft, ctagsPath)
+  var tags = Tags(bufname, &ft, ctagsPath, extend(ctagsTypes, sCtagsTypes, 'keep'))
 
   map(tags, (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', ''))
 
