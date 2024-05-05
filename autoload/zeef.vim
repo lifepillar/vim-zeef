@@ -22,6 +22,7 @@ var sLabel:          string             = 'Zeef' # Prompt label
 var sInput:          string             = ''     # The user input
 var sKeyPress:       string             = ''     # Last key press
 var sResult:         list<string>       = []     # The selected items
+var sFinish:         bool               = false  # When true, exit the event loop
 var sPopupId:        number             = -1     # ID of the selection popup (for multiple selection)
 
 # Stack of booleans that tells whether to undo when pressing backspace.
@@ -120,6 +121,7 @@ def RemoveFromSelection(lnum: number)
 enddef
 
 def EchoPrompt()
+  redrawstatus
   redraw
   echo "\r"
   echo sLabel .. sPrompt .. sInput
@@ -214,41 +216,35 @@ def CloseZeefBuffer()
 enddef
 # }}}
 # Actions {{{
-def Accept(): bool
+def Accept()
   if empty(sResult)
     add(sResult, getline('.'))
   endif
 
+  sFinish = true
   CloseZeefBuffer()
-
-  return false
 enddef
 
-def Cancel(): bool
+def Cancel()
   CloseZeefBuffer()
   sResult = []
-
-  return false
+  sFinish = true
 enddef
 
-def Clear(): bool
+def Clear()
   silent undo 1
 
   sUndoStack = []
   sInput = ''
-
-  return true
 enddef
 
-def DeselectAll(): bool
+def DeselectAll()
   sResult = []
   popup_close(sPopupId)
   sPopupId = -1
-
-  return true
 enddef
 
-def DeselectCurrent(): bool
+def DeselectCurrent()
   var i = 1
   var n = line('$')
 
@@ -256,35 +252,25 @@ def DeselectCurrent(): bool
     RemoveFromSelection(i)
     ++i
   endwhile
-
-  return true
 enddef
 
-def MoveUp(): bool
+def MoveUp()
   normal k
-  return true
 enddef
 
-def Noop(): bool
-  return true
-enddef
-
-def Passthrough(): bool
+def Passthrough()
   execute 'normal' sKeyPress
-  return true
 enddef
 
-def ScrollLeft(): bool
+def ScrollLeft()
   execute $'normal {sHorizScroll}zh'
-  return true
 enddef
 
-def ScrollRight(): bool
+def ScrollRight()
   execute $'normal {sHorizScroll}zl'
-  return true
 enddef
 
-def SelectCurrent(): bool
+def SelectCurrent()
   var i = 1
   var n = line('$')
 
@@ -292,55 +278,48 @@ def SelectCurrent(): bool
     AddToSelection(i)
     ++i
   endwhile
-
-  return true
 enddef
 
-def SplitAccept(): bool
+def SplitAccept()
   Accept()
+  sFinish = true
   split
-  return false
 enddef
 
-def TabNewAccept(): bool
+def TabNewAccept()
   Accept()
+  sFinish = true
   tabnew
-  return false
 enddef
 
-def Toggle(): bool
+def Toggle()
   if index(sResult, getline(line('.'))) == -1
     AddToSelection(line('.'))
   else
     RemoveFromSelection(line('.'))
   endif
-
-  return true
 enddef
 
-def Undo(): bool
+def Undo()
   sInput = strcharpart(sInput, 0, strchars(sInput) - 1)
 
   if !empty(sUndoStack) && remove(sUndoStack, -1)
     silent undo
   endif
-
-  return true
 enddef
 
-def VertSplitAccept(): bool
+def VertSplitAccept()
   Accept()
+  sFinish = true
   vsplit
-  return false
 enddef
 
-def ToggleSelected(): bool
+def ToggleSelected()
   if IsSelectionPopupVisible()
     HideSelectionPopup()
   else
     ShowSelectionPopup()
   endif
-  return true
 enddef
 # }}}
 # Key Map {{{
@@ -387,15 +366,15 @@ def GetKeyPress(): string
   return ''
 enddef
 
-def ProcessKeyPress(): bool
+def ProcessKeyPress()
   if sKeyMap->has_key(sKeyPress)
-    var keepGoing = sKeyMap[sKeyPress]()
-    return keepGoing
+    sKeyMap[sKeyPress]()
+    return
   endif
 
   # Skip other non-printable characters
   if char2nr(sKeyPress[0]) == 0x80
-    return true
+    return
   endif
 
   sInput ..= sKeyPress
@@ -407,18 +386,15 @@ def ProcessKeyPress(): bool
 
     add(sUndoStack, new_seq != old_seq) # new_seq != old_seq iff the buffer has changed
   endif
-
-  return true
 enddef
 
 def EventLoop()
   while true
-    redrawstatus
-
     EchoPrompt()
     sKeyPress = GetKeyPress()
+    ProcessKeyPress()
 
-    if !ProcessKeyPress()
+    if sFinish
       break
     endif
   endwhile
@@ -431,6 +407,7 @@ export def Open(
   sLabel      = promptLabel
   sInput      = ''
   sResult     = []
+  sFinish     = false
   sWinRestCmd = winrestcmd()
   sBufnr      = OpenZeefBuffer(items)
 
@@ -441,3 +418,140 @@ export def Open(
   endif
 enddef
 # }}}}
+# Examples {{{
+# Path Filters {{{
+
+def SetArglist(items: list<string>)
+  execute 'args' join(mapnew(items, (_, p) => fnameescape(p)))
+enddef
+
+# Filter a list of paths and populate the arglist with the selected items.
+export def Args(paths: list<string>)
+  Open(paths, SetArglist, 'Choose files')
+enddef
+
+# Ditto, but use the paths in the specified directory
+export def Files(dir = '.')
+  var cmd = executable('rg') ? $"rg --files '{dir}'" : $"find '{dir}' -type f"
+
+  Open(systemlist(cmd), SetArglist, 'Choose files')
+enddef
+# }}}
+# Buffer Switcher {{{
+def SwitchToBuffer(items: list<string>)
+  execute 'buffer' matchstr(items[0], '^\s*\zs\d\+')
+enddef
+
+# props is a dictionary with the following keys:
+#   - unlisted: when set to true, show also unlisted buffers
+export def Buffer(props: dict<any> = {})
+  var showUnlisted = get(props, 'unlisted', false)
+  var cmd = 'ls' .. (showUnlisted ? '!' : '')
+  var buffers = split(execute(cmd), "\n")
+  map(buffers, (_, b): string => substitute(b, '"\(.*\)"\s*line\s*\d\+$', '\1', ''))
+
+  Open(buffers, SwitchToBuffer, 'Switch buffer')
+enddef
+# }}}
+# Quickfix/Location List Filter {{{
+def JumpToQuickfixEntry(items: list<string>)
+  execute 'crewind' matchstr(items[0], '^\s*\d\+')
+enddef
+
+def JumpToLocationListEntry(items: list<string>)
+  execute 'lrewind' matchstr(items[0], '^\s*\d\+')
+enddef
+
+export def QuickfixList()
+  var qflist = getqflist()
+
+  if empty(qflist)
+    echo '[Zeef] Quickfix list is empty'
+    return
+  endif
+
+  var cmd = split(execute('clist'), "\n")
+
+  Open(cmd, JumpToQuickfixEntry, 'Filter quickfix entry')
+enddef
+
+export def LocationList(winnr: number)
+  var loclist = getloclist(winnr)
+
+  if empty(loclist)
+    echo '[Zeef] Location list is empty'
+    return
+  endif
+
+  var cmd = split(execute('llist'), "\n")
+
+  Open(cmd, JumpToLocationListEntry, 'Filter loclist entry')
+enddef
+# }}}
+# Find Color Scheme {{{
+var sColorschemes: list<string> = []
+
+def SetColorscheme(items: list<string>)
+  execute 'colorscheme' items[0]
+enddef
+
+export def Colorscheme()
+  if empty(sColorschemes)
+    var searchPaths = [
+      globpath(&runtimepath, 'colors/*.vim', 0, 1),
+      globpath(&packpath, 'pack/*/{opt,start}/*/colors/*.vim', 0, 1),
+    ]
+
+    for pathList in searchPaths
+      sColorschemes += map(pathList, (_, p): string => fnamemodify(p, ':t:r'))
+    endfor
+  endif
+
+  Open(sColorschemes, SetColorscheme, 'Choose colorscheme')
+enddef
+# }}}
+# Buffer Tags Using Ctags {{{
+const sCtagsBin = executable('uctags') ? 'uctags' : 'ctags'
+
+# Adapted from CtrlP's buffertag.vim
+const sCtagsTypes = extend({
+  'aspperl': 'asp',
+  'aspvbs':  'asp',
+  'cpp':     'c++',
+  'cs':      'c#',
+  'delphi':  'pascal',
+  'expect':  'tcl',
+  'mf':      'metapost',
+  'mp':      'metapost',
+  'rmd':     'rmarkdown',
+  'csh':     'sh',
+  'zsh':     'sh',
+  'tex':     'latex',
+}, get(g:, 'zeef_ctags_types', {}))
+
+def Tags(path: string, filetype: string, ctagsPath = sCtagsBin): list<string>
+  var language = get(sCtagsTypes, filetype, filetypes)
+  var filepath  = shellescape(expand(path))
+
+  return systemlist(
+    $'{ctagsPath} -f - --sort=no --excmd=number --fields= --extras=+F --language-force={language} {filepath}'
+  )
+enddef
+
+def JumpToTag(items: list<string>, bufname: string)
+  if items[0] =~ '^\d\+'
+    var [lnum, tag] = split(items[0], '\s\+')
+    execute $'buffer +{lnum} {bufname}'
+  endif
+enddef
+
+export def BufferTags()
+  var bufname = bufname("%")
+  var tags = map(Tags(bufname, &ft),
+    (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', '')
+  )
+
+  Open(tags, (t: string) => JumpToTag(t, bufname), 'Choose tags')
+enddef
+# }}}
+# }}}
