@@ -1,4 +1,4 @@
-*zeef.txt*	For Vim version 8.2	Last change: 2020 Nov 15
+*zeef.txt*	For Vim version 9.1	Last change: 2024 May 5
 
 			______          ________                         ~
 			___  /_____________  __/                         ~
@@ -13,54 +13,60 @@ License: MIT
 CONTENTS				*zeef-contents*
 
 	1.  Introduction .............. |zeef-introduction|
-	2.  Requirements .............. |zeef-requirements|
-	3.  Function .................. |zeef-functions|
-	4.  Customization ............. |zeef-customization|
+	2.  Functions ................. |zeef-functions|
+	3.  Customization ............. |zeef-customization|
 
 ==============================================================================
 1. Introduction				*zeef-introduction*
 
-Zeef is a minimalist dynamic interactive filter for a |List| of items. It does
-not define any command or mapping.  It is used by invoking |zeef#open()|. Try
-this "zeef":
+Zeef is a pure autoload interactive fuzzy filter for a |List| of items
+entirely written in Vim 9 script. Zeef requires Vim 9.1 or later, built with
+|+popupwin| and |+textprop|.
+
+Zeef does not define any command or mapping: that is left as a task for the
+user. It is used by invoking |zeef.Open()|:
 >
-	:fun Callback(result)
-	:  echo a:result
-	:endf
-	:call zeef#open(['Jan', 'Jun', 'Jul'], 'Callback', 'Choose')
+	:call zeef#Open(['January', 'July', 'Julian', 'adjective', 'every'])
 <
-Start typing to filter the list. Press <enter> to invoke the callback with the
-selected item(s) (multiple selections are possible—see below). Press <esc> to
-cancel. The following is the complete list of keys you can use when the Zeef
+Start typing to filter the list. Press <tab> to select an item: that will
+automatically open the "selected items" popup, which displays the currently
+selected items. Press <enter> to invoke a callback with the selected item(s),
+or with the item under the cursor if nothing was selected. Press <esc> to
+cancel. The default callback just echoes the selected items.
+
+The following is the complete list of keys you can use when the Zeef
 buffer is open.
 
-- <c-k> or <up>: move up one line;
-- <c-j> or <down>: move down one line;
-- <left> and <right>: scroll horizontally;
-- <c-b>, <c-f>, <c-d>, <c-u>, <c-e>, <c-y>: usual movements;
-- <c-l>: clear the prompt;
-- <c-g>: clear the prompt and deselect all items;
-- <c-z>: toggle the selection of the current line;
-- <c-a>: select all currently filtered lines;
-- <c-r>: deselect all currently filtered lines;
-- <esc>, <c-c>: close Zeef without performing any action;
-- <enter>: accept the current choice;
-- <c-s>, <c-v>, <c-t>: like <enter>, but also open a horizontal split,
-  vertical split or tab.
+- <c-k> or <up>: moves up one line.
+- <c-j> or <down>: moves down one line.
+- <left> and <right>: scrolls horizontally.
+- <c-b>, <c-f>, <c-d>, <c-u>, <c-e>, <c-y>: usual movements.
+- <bs>: deletes one character from the prompt.
+- <c-l>: clears the prompt.
+- <tab>: selects the current item.
+- <s-tab>: deselects the current item.
+- <c-x>: toggles the selection of the current item.
+- <c-g>: deselects all items.
+- <c-a>: selects all currently filtered items.
+- <c-r>: deselects all currently filtered items.
+- <c-p>: toggles the selected items popup.
+- <esc>, <c-c>: closes Zeef without performing any action.
+- <enter>: accepts the current choice.
+- <c-s>, <c-v>, <c-t>: same as <enter>, but also opens a horizontal split,
+  vertical split or tab window, respectively.
 
-For overriding such mappings, see |g:zeef_keymap| and |zeef#open()|.
+Zeef supports using the mouse: you may select and deselect by clicking on an
+item, and you may use the mouse to scroll both vertically and horizontally.
+These are the supported mouse events:
 
-How does Zeef differ from the several similar plugins already out there, you
-ask? The implementation is likely the simplest possible: as you type,
-|:global| is used to remove the lines that do not match what you are typing.
-When you press backspace, |:undo| is used to restore the previous state. Yes,
-the core of this plugin is based on just those two Vim commands. It works
-surprisingly well, unless your list is huge (hundreds of thousands of lines).
+- <LeftMouse>: in Zeef buffer, selects or deselects an item; in the selected
+  items popup, removes an item from the list of selected items.
+- <ScrollWheelUp>, <ScrollWheelDown>: vertical scrolling.
+- <ScrollWheelLeft>, <ScrollWheelRight>: horizontal scrolling.
 
-What can you do with Zeef? Whatever you want! Zeef is not bloated with
-features that you will never use: it is for people who wish to implement their
-own functionality with minimal help. That said, Zeef does come with a few
-"sample applications", also called "zeefs":
+Any of the previous mappings can be overridden: see |zeef-customization|.
+
+Zeef comes with a few simple predefined "zeefs":
 
 - a buffer switcher;
 - a path filter;
@@ -68,213 +74,275 @@ own functionality with minimal help. That said, Zeef does come with a few
 - a color scheme selector;
 - a buffer tag chooser.
 
-See the source code for reference. It's not that complicated.
+See |zeef-functions| for a description of each zeef.
 
-Ah, before you ask: the answer is no. Zeef does *not* perform fuzzy search,
-approximate search, match rankings, or other esoteric stuff. All that is out
-of the scope of this project. Those are features that are well covered by
-other plugins, after all.
+While these provide useful functionality out of the box, Zeef encourages you
+to define your own zeefs that fit exactly your needs.
 
 ==============================================================================
-2. Requirements					*zeef-requirements*
+2. Functions					*zeef-functions*
 
-Zeef is 100% Vim script. It should work in Vim 7.4 or later. The only recent
-feature that Zeef uses is |text-properties|, to highlight selected matches. It
-will work even without that: you will still be able to perform multiple
-selections, but you will not get any visual feedback.
+						*zeef.Open()*
+Open({items}, [{func}, {label}, {multi}, {dupInsert}, {dupDelete}, {aliases}])
+		Open a Zeef buffer at the bottom of the screen, populated with
+		a |List| of {items}.
 
-==============================================================================
-3. Functions					*zeef-functions*
+		If present, {func} must be a function or lambda that receives
+		a |List| of |String|s and does not return anything. The
+		function is invoked when the user accepts the prompt by
+		pressing <enter> or equivalent key. The function is not
+		invoked if the user cancels the operation with <esc> or <c-c>.
 
-						|zeef#open()|
-The arguments of the function are:
+		The {label} is a |String| shown in the command-line before
+		the cursor. It should be short and informative about the
+		purpose of the zeef.
 
-1. a |List| of items;
-2. the name of a callback function;
-3. the text for the command line prompt;
-4. (optional) a |Dictionary| as in |g:zeef_keymap|.
+		By default, the Zeef buffer allows multiple selections: set
+		{multi} to |false| to allow selecting at most one item.
 
-For instance:
+		The last two optional arguments are two more boolean flags
+		relevant only when multiple selections are enabled. When
+		{dupInsert} is |true|, multiple identical items may be added
+		to the list of selected items. By default, {dupInsert} is
+		|false| and selected entries are kept unique. When {dupDelete}
+		is |true|, removing an item from the selected items deletes
+		all the copies of that item. By default, {dupDelete} is
+		|false| and only the first copy is deleted. Of course, if
+		{dupInsert} is |false|, the value of {dupDelete} is
+		irrelevant.
+
+		{aliases} is a |Dictionary| defining aliases for the default
+		keys, similarly to |zeef.keyaliases|. Differently from
+		|zeef.keyaliases|, though, the {aliases} are valid only until
+		|zeef.Open()| returns, so they are specific to a particular
+		zeef.
+
+Args({paths})					*zeef.Args()*
+		Interactively filter a list of paths and populate the arglist
+		with the selected items. For example:
 >
-	:call zeef#open(['A', 'B', 'C'], 'Callback', 'Choose',
-	    \ { "\<c-d>": function("MyOwnFunction") })
+		:call zeef#Args(v:oldfiles)
 <
-						|zeef#args()|
-Filters a list of paths and populate the arglist with the selected items. For
-example:
->
-	:call zeef#args(v:oldfiles)
-<
-						|zeef#buffer()|
-Opens a buffer switcher. The function takes a |Dictionary| as its only
-argument. Such a dictionary may have the following key:
+		See also |zeef.Files()|.
 
-- `unlisted`: when set to 1, include unlisted buffers.
-
-For example:
+BufferSwitcher([{props}])			*zeef.BufferSwitcher()*
+		Open a buffer switcher. By default, unlisted buffers are not
+		shown: to include unlisted buffers, use the {props} argument
+		set to {unlisted: true}.
 >
-	:call zeef#buffer(#{unlisted: 0})
+ 		:call zeef#BufferSwitcher({'unlisted': 1})
 <
-						|zeef#buffer_tags()|
-Filters tags in the current buffer and jumps to a tag. Requires |ctags|.
+BufferTags([{types}, {bin}])			*zeef.BufferTags()*
+		Interactively filter the tags in the current buffer and jumps
+		to the selected tag. Requires |ctags|. {types} is
+		a |Dictionary| mapping Ctags types to Vim filetypes. {bin} is
+		the path of the Ctags executable, if the executable is not in
+		$PATH.
 >
-	:call zeef#buffer_tags()
+		:call zeef#BufferTags()
 <
-						|zeef#colorscheme()|
-Selects a color scheme.
+ColorschemeSwitcher()				*zeef.ColorschemeSwitcher()*
+		Select a color scheme.
 >
-	:call zeef#colorscheme()
+		:call zeef#ColorschemeSwitcher()
 <
-						|zeef#files()|
-Filters the list of paths inside a specified directory and populate the
-arglist with the selected items. For example:
+Files([{dir}])					*zeef.Files()*
+		Interactively filter the list of paths inside a given
+		directory and populate the arglist with the selected items. If
+		{dir} is not provided, the current working directory is used:
+		see |getcwd()|. The list is built using an external program:
+		`ripgrep` if that is available, otherwise `find`. For example:
 >
-	:call zeef#files('~/.vim')
+		:call zeef#Files('~/.vim')
 <
-The path is optional: if not specified, the current directory is used.
+		See also |zeef.Args()|.
 
-						|zeef#keypressed()|
-The most recently pressed key. You may use this function in your callback to
-determine how the Zeef buffer was dismissed. For example, suppose you want to
-define a zeef similar to |zeef#buffer()|, but one that will delete buffers
-when CTRL-D is pressed. A slightly simplified definition may look as follows:
+LastKeyPressed()				*zeef.LastKeyPressed()*
+		The most recently pressed key. This may be used in the
+		callback to determine how Zeef was dismissed.
+
+		For example, suppose that you want to define a zeef similar to
+		|zeef.BufferSwitcher()|, but one that deletes the selected
+		buffers when CTRL-D is pressed. You may define an alias for
+		<enter> and then use |LastKeyPressed()| in the callback to
+		determine how Zeef was dismissed:
 >
-	fun! Buffers() abort
-	  let l:buffers = split(execute('ls'), "\n")
-	  call zeef#open(l:buffers, 'Callback', 'Choose',
-	      \ { "\<c-d>": function('zeef#accept') })
-	endfun
+		import autoload 'zeef.vim'
 
-	fun! Callback(result) abort
-	  if zeef#keypressed() == "\<c-d>"
-	    for l:item in a:result
-	      echo ":bdelete " .. matchstr(l:item, '^\s*\zs\d\+')
-	    endfor
-	  else
-	    echo "Do smth else with the result"
-	  endif
-	endfun
-
-	:call Buffers()
+		# Make CTRL-D an alias for Enter
+		zeef.keyaliases = {"\<c-d>": "\<enter>"}
+	
+		def Callback(items: list<string>)
+		  if zeef.LastKeyPressed() == "\<c-d>"
+		    for item in items
+		      echo $':bdelete {matchstr(item, '^\s*\zs\d\+')}'
+		    endfor
+		  else
+		    echo "Possibly do something else with the items"
+		  endif
+		enddef
+	
+		def Buffers()
+		  var buffers = split(execute('ls'), "\n")
+		  zeef.Open(buffers, Callback, 'Choose')
+		enddef
+	
+		Buffers()
 <
-						|zeef#loclist()|
-Filters the lines of a location list and jumps to the selected item (if more
-than one item is selected, jumps to the first one). The argument of this
-function is the window number of a location list. Pass 0 to use the location
-list for the current window. For instance:
+		Here, the alias has been defined globally as a configuration
+		option (with |zeef.keyaliases|). If you want to bind CTRL-D to
+		<enter> only for this particular zeef but not for others, you
+		may alternatively pass the binding as an argument to
+		|zeef.Open()|:
 >
-	:call zeef#loclist(0)
+		zeef.Open(buffers,
+		  Callback, 'Choose', true, false, false,
+		  {"\<c-d>": "\<enter>"}
+		)
 <
-						|zeef#qflist()|
-Filters the lines of the quickfix list and jumps to the selected item (if more
-than one item is selected, jumps to the first one).
+LocationList([{nr}, {func}])			*zeef.LocationList()*
+		Interactively filter the lines from a location list and
+		execute {func} on the selected items. For {nr}, see
+		|getloclist()|. If {nr} is not specified, the location list of
+		the current window is used. If {func} is not provided, the
+		default behaviour is to jump to the first selected item. For
+		instance:
 >
-	:call zeef#qflist()
+		:call zeef#LocationList()
 <
-						|zeef#result()|
-The |List| resulting from filtering the entries in the Zeef buffer. This may
-be useful if you need to define a custom action. For instance, an alternative
-to the code shown in |zeef#keypressed()| is the following:
+QuickfixList([{func}])				*zeef.QuickfixList()*
+		Interactively filter the lines from the quickfix list and
+		execute {func} on the selected items. If {func} is not
+		provided, the default behaviour is to jump to the first
+		selected item. For instance:
 >
-	fun! DeleteBuffers()
-	  call zeef#close('')
-	  let l:result = zeef#result() " <== Retrieve the filtered list
-	  for l:item in l:result
-	    echo ":bdelete " .. matchstr(l:item, '^\s*\zs\d\+')
-	  endfor
-	  return 1 " This MUST return 1 if you close Zeef
-	endf
-
-	fun! Buffers() abort
-	  let l:buffers = split(execute('ls'), "\n")
-	  call zeef#open(l:buffers, 'Callback', 'Choose',
-	        \ { "\<c-d>": function('DeleteBuffers') })
-	endfun
-
-	fun! Callback(result) abort
-	  echo "Do smth else with result"
-	endfun
-
-	:call Buffers()
+		:call zeef#QuickfixList()
 <
-In this case, the callback handles some default behaviour, but pressing CTRL-D
-triggers a custom action to delete the selected buffers.
-
 =============================================================================
-4. Customization				*zeef-customization*
+3. Customization				*zeef-customization*
 
-Zeef defines three highlight groups, which you may redefine in your |vimrc|:
+Zeef defines the following highlight groups, which you may redefine in your
+|vimrc|:
 
-- `ZeefMatch`: used for highlighting the matching characters;
-- `ZeefName`: used for highlighting the name of the buffer in the status line;
-- `ZeefSelected`: used for highlighting the selected lines.
+- `ZeefMatch`: used for highlighting the matching characters.
+- `ZeefName`: used for highlighting the name of the buffer in the status line.
+- `ZeefPopupWinColor`: the color of the selected items popup.
+- `ZeefPopupBorderColor`: the color of the border of the popup.
+- `ZeefPopupScrollbarColor` : the color of scrollbar of the popup.
+- `ZeefPopupScrollbarThumbColor`: the color of the scrollbar thumb.
 
-Besides, Zeef provides the following options:
+There are two mechanisms to configure Zeef: one uses good old global variables
+and the other directly sets Zeef script variables. Which one to use is mostly
+a matter of taste.
 
-						*'g:zeef_ctags_types'*
-A dictionary used to map Vim filetypes to Ctags language names. This is used
-by |zeef#buffer_tags()|.
+For each global setting of the form `g:zeef_<setting>`, Zeef exports a script
+variable called `<setting>` with the same meaning. For example, the height of
+the Zeef buffer can be changed by setting |g:zeef_winheight| or by setting
+|zeef.winheight|. The latter is recommended because settings may be changed on
+the fly and take effect the next time Zeef is open. Changes to global
+variables are applied only if they are done before the Zeef script is loaded.
+
+Note: from the command line you may have to use a slightly different syntax.
+For example, to adjust the height of the Zeef window:
 >
-	let g:zeef_ctags_types = {
-	\    'aspperl': 'asp',
-	\    'aspvbs':  'asp',
-	\    'cpp':     'c++',
-	\    ...
-	\ }
+	:let zeef#winheight = 5
 <
+						*'zeef.keyaliases'*
+						*'g:zeef_keyaliases'*
+Use this to set your own mappings for the various actions in Zeef. This is
+done by associating your own key to a default Zeef key mapping.
+>
+	zeef.keyaliases: dict<string> = {}
+<
+For example, suppose you want to use <c-s> to select an item and <tab> to
+dismiss Zeef and open a split window (therefore inverting the default
+behaviour), and additionally use <c-h> to scroll horizontally to the left.
+Then, you may define:
+>
+	zeef.keyaliases = {
+	  "\<c-s>": "\<tab>",
+	  "\<tab>": "\<c-s>"
+	  "\<c-h>": "\<left>",
+	}
+<
+The target keys must be those defined in |zeef-introduction|.
+
+						*'zeef.keymap'*
 						*'g:zeef_keymap'*
-A |Dictionary| that maps a key to a function that performs an action. See the
-source code for the full definition. You may override any key, add your own
-mappings and map your own functions.
-
-Note: you may also override some mappings for a single zeef: see
-|zeef#open()|.
-
-						*'g:zeef_height'*
-The height of the Zeef buffer.
+A |Dictionary| that maps keys to arbitrary functions. You may override any key
+and map your own functions. Such functions should take no arguments and return
+no value.
 >
-	let g:zeef_height = 10
+	zeef.keymap: dict<func()> = {}
 <
-						*'g:zeef_name'*
-The label of the Zeef buffer, as it appears in the status line.
+The following is a silly example, hijacking the functionality of <enter>:
 >
-	let g:zeef_name = 'Zeef'
+	zeef.keymap = {"\<enter>": () => {
+	  smile
+	}}
 <
+Note: key mappings may be overridden for the duration of a single zeef, too:
+see |zeef.Open()|.
+						*'zeef.limit'*
+						*'g:zeef_limit'*
+The maximum number of fuzzy matches to display. Zero means no limit. See also
+|matchfuzzy()|.
+>
+	zeef.limit = 100 
+<
+						*'zeef.matchseq'*
+						*'g:zeef_matchseq'*
+When |true|, fuzzy matching only returns matches that contain the characters
+in the user input in the order in which they have been typed. See
+|matchfuzzy()| for the details.
+>
+	zeef.matchseq = false 
+<
+						*'zeef.popupmaxheight'*
+						*'g:zeef_popupmaxheight'*
+The maximum height of the selected items popup.
+>
+	zeef.popupmaxheight = 100 
+<
+Note that the height is limited by the number of screen lines in any case.
+
+						*'zeef.prompt'*
 						*'g:zeef_prompt'*
-The symbol(s) to be used for the command line prompt:
+The string to be used for the command line prompt:
 >
-	let g:zeef_prompt = '> '
+	zeef.prompt = ' ❯ ' 
 <
-						*'g:Zeef_regexp'*
-A function, funcref, or lambda, which receives as input the text typed by the
-user and must return a |'magic'| regular expression to filter the list. The
-default function behaves mostly like globbing, except that ^ and $ can be used
-to anchor a pattern. All characters are matched literally except ^, $, and the
-wildchar (see below); the latter matches zero 0 more characters.
-
-Note the capital Z of this option!
-
-						*'g:zeef_skip_first'*
+						*'zeef.sidescroll'*
+						*'g:zeef_sidescroll'*
+The amount of characters to shift when scrolling horizontally with the arrow
+keys.
+>
+	zeef.sidescroll = 5
+<
+						*'zeef.skipfirst'*
+						*'g:zeef_skipfirst'*
 Do not start filtering until at least this number of characters has been
 typed.
 >
-	let g:zeef_skip_first = 0
+	zeef.skipfirst = 0
 <
-						*'g:zeef_wildchar'*
-The character key that must be interpreted as a wildchar, that is, a character
-that matches zero or more arbitrary characters.
+						*'zeef_stlname'*
+						*'g:zeef_stlname'*
+The label of the Zeef buffer, as it appears in the status line.
 >
-	let g:zeef_wildchar = ' '
+	zeef.stlname = 'Zeef'
 <
-The default wildchar is the space, because the space bar is
-comfortable to type and usually one does not care about matching spaces.
-But if you want to use, say, an asterick as a wildchar, then add
+						*'zeef.winheight'*
+						*'g:zeef_winheight'*
+The number of lines of the Zeef buffer.
 >
-	let g:zeef_wildchar = '*'
+	zeef.winheight = 10
 <
-to your |vimrc|.
-
-NOTE: the following characters are always escaped, so they cannot be used as
-wildchars: `~`, `.`, `\`, `[`, `:`.
-
+						*'zeef.winhighlight'*
+						*'g:zeef_winhighlight'*
+Highlight group name to use for the Zeef window instead of Normal. See
+|wincolor|.
+>
+	zeef.winhighlight = ''
+<
  vim:tw=78:ts=8:noet:ft=help:norl:
