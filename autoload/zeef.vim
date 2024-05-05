@@ -7,26 +7,39 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # User Configuration {{{
-export var winheight       = get(g:, 'zeef_winheight',      10    )
-export var stlname         = get(g:, 'zeef_stlname',        'Zeef')
-export var prompt          = get(g:, 'zeef_prompt',         ' ❯ ' )
-export var skipfirst       = get(g:, 'zeef_skipfirst',      0     )
-export var sidescroll      = get(g:, 'zeef_sidescroll',     5     )
-export var popupmaxheight  = get(g:, 'zeef_popupmaxheight', 100   )
+export var keyaliases:     dict<string> = get(g:, 'zeef_keyaliases',     {}    )
+export var keymap:         dict<func()> = get(g:, 'zeef_keymap',         {}    )
+export var limit:          number       = get(g:, 'zeef_limit',          0     )
+export var matchseq:       bool         = get(g:, 'zeef_matchseq',       false )
+export var popupmaxheight: number       = get(g:, 'zeef_popupmaxheight', 100   )
+export var prompt:         string       = get(g:, 'zeef_prompt',         ' ❯ ' )
+export var sidescroll:     number       = get(g:, 'zeef_sidescroll',     5     )
+export var skipfirst:      number       = get(g:, 'zeef_skipfirst',      0     )
+export var stlname:        string       = get(g:, 'zeef_stlname',        'Zeef')
+export var winheight:      number       = get(g:, 'zeef_winheight',      10    )
+export var winhighlight:   string       = get(g:, 'zeef_winhighlight',   ''    )
 
 class Config
-  static var WinHeight      = () => winheight
-  static var StatusLineName = () => stlname
-  static var Prompt         = () => prompt
-  static var SkipFirst      = () => skipfirst
-  static var SideScroll     = () => sidescroll
+  static var KeyAliases     = () => keyaliases
+  static var KeyMap         = () => keymap
+  static var Limit          = () => limit
+  static var MatchSeq       = () => matchseq
   static var PopupMaxHeight = () => popupmaxheight
+  static var Prompt         = () => prompt
+  static var SideScroll     = () => sidescroll
+  static var SkipFirst      = () => skipfirst
+  static var StatusLineName = () => stlname
+  static var WinHeight      = () => winheight
+  static var WinHighlight   = () => winhighlight
 endclass
 # }}}
 # Internal State {{{
 var sBufnr:                  number       = -1     # Zeef buffer number
 var sInput:                  string       = ''     # The user input
-var sKeyPress:               string       = ''     # Last key press
+var sKeyPress:               string       = ''     # Last (mapped) key press
+var sKeyAlias:               string       = ''     # The actual key press (different from sKeyPress if aliased)
+var sKeyAliases:             dict<string> = {}     # The current key aliases
+var sKeyMap:                 dict<func()> = {}     # Zeef key map
 var sResult:                 list<string> = []     # The currently selected items
 var sFinish:                 bool         = false  # When true, exit the event loop
 var sPopupId:                number       = -1     # ID of the selection popup
@@ -108,9 +121,13 @@ def EchoResult(items: list<string>)
 enddef
 
 def FuzzyFilter(): number
-  var [lines, charpos, _] = matchfuzzypos(
-    getbufline(bufnr(), 1, line('$')), sInput, {}
-  )
+  var opts: dict<any> = {'limit': Config.Limit()}
+
+  if Config.MatchSeq()
+    opts['matchseq'] = true
+  endif
+
+  var [lines, charpos, _] = matchfuzzypos(getbufline(bufnr(), 1, line('$')), sInput, opts)
 
   deletebufline(bufnr(), 1, '$')
   setbufline(bufnr(), 1, lines)
@@ -137,6 +154,10 @@ enddef
 def OpenZeefBuffer(items: list<string>): number
   # botright 10new may not set the right height, e.g., if the quickfix window is open
   execute $'botright :1new | :{Config.WinHeight()}wincmd +'
+
+  if !empty(Config.WinHighlight())
+    &wincolor = Config.WinHighlight()
+  endif
 
   hi default link ZeefMatch Label
   hi default link ZeefName StatusLine
@@ -406,8 +427,8 @@ def ActionToggleSelectionPopup()
   endif
 enddef
 # }}}
-# Key Map {{{
-var sKeyMap = {
+# Default Key Map {{{
+const cDefaultKeyMap = {
   "\<LeftMouse>":        ActionLeftClick,
   "\<ScrollWheelDown>":  ActionPassthrough,
   "\<ScrollWheelLeft>":  ActionPassthrough,
@@ -445,7 +466,8 @@ var sKeyMap = {
 # Event Processing  {{{
 def GetKeyPress(): string
   try
-    return getcharstr()
+    sKeyAlias = getcharstr()
+    return get(sKeyAliases, sKeyAlias, sKeyAlias)
   catch /^Vim:Interrupt$/ # CTRL-C
     return ''
   endtry
@@ -496,22 +518,32 @@ export def Open(
     multipleSelection:      bool               = true,
     duplicateInsertion:     bool               = false,
     duplicateDeletion:      bool               = false,
+    aliases:                dict<string>       = {},
     )
-  sLabel                  = promptLabel
-  sMultipleSelection      = multipleSelection
-  sDuplicateInsertion     = duplicateInsertion && multipleSelection
-  sDuplicateDeletion      = sDuplicateInsertion && duplicateDeletion
-  sInput                  = ''
-  sResult                 = []
-  sFinish                 = false
-  sWinRestCmd             = winrestcmd()
-  sBufnr                  = OpenZeefBuffer(items)
+  sLabel              = promptLabel
+  sMultipleSelection  = multipleSelection
+  sDuplicateInsertion = duplicateInsertion && multipleSelection
+  sDuplicateDeletion  = sDuplicateInsertion && duplicateDeletion
+  sInput              = ''
+  sResult             = []
+  sFinish             = false
+  sKeyMap             = extend(extend({}, Config.KeyMap()), cDefaultKeyMap, 'keep')
+  sKeyAliases         = extend(aliases, Config.KeyAliases(), 'keep')
+  sWinRestCmd         = winrestcmd()
+  sBufnr              = OpenZeefBuffer(items)
 
   EventLoop()
 
   if !empty(sResult)
     Callback(sResult)
   endif
+
+  sInput = ''
+  sResult = []
+enddef
+
+export def LastKeyPressed(): string
+  return sKeyAlias
 enddef
 # }}}}
 # Zeefs {{{
@@ -527,8 +559,9 @@ export def Args(paths: list<string>)
 enddef
 
 # Ditto, but use the paths in the specified directory
-export def Files(dir = '.')
-  var cmd = executable('rg') ? $"rg --files '{dir}'" : $"find '{dir}' -type f"
+export def Files(directory = '.')
+  var dir = shellescape(fnamemodify(directory, ':p'))
+  var cmd = executable('rg') ? $"rg --files {dir}" : $"find {dir} -type f"
 
   Open(systemlist(cmd), SetArglist, 'Choose files')
 enddef
@@ -585,25 +618,23 @@ export def LocationList(winnr = 0, Callback = JumpToLocationListEntry)
 enddef
 # }}}
 # Find Color Scheme {{{
-var sColorschemes: list<string> = []
-
 def SetColorscheme(items: list<string>)
   execute 'colorscheme' items[0]
 enddef
 
 export def ColorschemeSwitcher()
-  if empty(sColorschemes)
     var searchPaths = [
       globpath(&runtimepath, 'colors/*.vim', 0, 1),
       globpath(&packpath, 'pack/*/{opt,start}/*/colors/*.vim', 0, 1),
     ]
+    var colorschemes = []
 
     for pathList in searchPaths
-      sColorschemes += map(pathList, (_, p): string => fnamemodify(p, ':t:r'))
+      colorschemes += map(pathList, (_, p): string => fnamemodify(p, ':t:r'))
     endfor
   endif
 
-  Open(sColorschemes, SetColorscheme, 'Choose colorscheme', false)
+  Open(colorschemes, SetColorscheme, 'Choose colorscheme', false)
 enddef
 # }}}
 # Buffer Tags Using Ctags {{{
