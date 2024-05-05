@@ -3,7 +3,11 @@ vim9script
 # Requirements Check {{{
 if !has('popupwin') || !has('textprop') || v:version < 901
   export def Open(
-      items: list<string>, F: func(list<string>) = null_function, promptLabel = ''
+      items: list<string>,
+      F:     func(list<string>) = null_function,
+      promptLabel               = '',
+      allowMultipleSelection    = true,
+      allowDuplicates           = false,
       )
     echomsg 'Zeef requires Vim 9.1 compiled with popupwin and textprop.'
   enddef
@@ -11,19 +15,21 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # Settings and Internal State {{{
-var sStatusLineName: string             = get(g:, 'zeef_stl_name', 'Zeef9')
-var sHeight:         number             = get(g:, 'zeef_height', 10) - 1
-var sPrompt:         string             = get(g:, 'zeef_prompt', '> ')
-var sSkipFirst:      number             = get(g:, 'zeef_skip_first', 0)
-var sHorizScroll:    number             = get(g:, 'zeef_horizontal_scroll', 5)
-var sPopupMaxHeight: number             = get(g:, 'zeef_selection_popup_max_height', 100)
-var sBufnr:          number             = -1     # Zeef buffer number
-var sLabel:          string             = 'Zeef' # Prompt label
-var sInput:          string             = ''     # The user input
-var sKeyPress:       string             = ''     # Last key press
-var sResult:         list<string>       = []     # The selected items
-var sFinish:         bool               = false  # When true, exit the event loop
-var sPopupId:        number             = -1     # ID of the selection popup (for multiple selection)
+var sStatusLineName:         string       = get(g:, 'zeef_stl_name', 'Zeef9')
+var sHeight:                 number       = get(g:, 'zeef_height', 10) - 1
+var sPrompt:                 string       = get(g:, 'zeef_prompt', '> ')
+var sSkipFirst:              number       = get(g:, 'zeef_skip_first', 0)
+var sHorizScroll:            number       = get(g:, 'zeef_horizontal_scroll', 5)
+var sPopupMaxHeight:         number       = get(g:, 'zeef_selection_popup_max_height', 100)
+var sBufnr:                  number       = -1     # Zeef buffer number
+var sLabel:                  string       = 'Zeef' # Prompt label
+var sInput:                  string       = ''     # The user input
+var sKeyPress:               string       = ''     # Last key press
+var sResult:                 list<string> = []     # The selected items
+var sFinish:                 bool         = false  # When true, exit the event loop
+var sPopupId:                number       = -1     # ID of the selection popup (for multiple selection)
+var sAllowMultipleSelection: bool         = true   # Whether muliple selections are allowed
+var sAllowDuplicates:        bool         = false  # Whether duplicate items in the result are allowed
 
 # Stack of booleans that tells whether to undo when pressing backspace.
 # If the top of the stack is true then undo; if it is false, do not undo.
@@ -307,13 +313,17 @@ def ActionScrollRight()
 enddef
 
 def ActionSelectCurrent()
-  var items = getbufline(sBufnr, 1, '$')
+  if sAllowMultipleSelection
+    var items = getbufline(sBufnr, 1, '$')
 
-  for item in items
-    AddToSelection(item)
-  endfor
+    for item in items
+      AddToSelection(item)
+    endfor
 
-  UpdateSelectionPopupStatus()
+    UpdateSelectionPopupStatus()
+  elseif len(sResult) == 0
+    ActionToggleItem()
+  endif
 enddef
 
 def ActionSplitAccept()
@@ -327,7 +337,13 @@ def ActionTabNewAccept()
 enddef
 
 def ActionToggleItem()
-  ToggleItem(getline('.'))
+  var item = getbufoneline(sBufnr, line('.'))
+
+  if !sAllowMultipleSelection && len(sResult) > 0 && item->NotIn(sResult)
+    return
+  endif
+
+  ToggleItem(item)
   UpdateSelectionPopupStatus()
 enddef
 
@@ -433,19 +449,25 @@ enddef
 # }}}
 # Public Interface {{{
 export def Open(
-    items: list<string>, F: func(list<string>) = EchoResult, promptLabel = 'Zeef'
+    items:                  list<string>,
+    Callback:               func(list<string>) = EchoResult,
+    promptLabel:            string             = 'Zeef',
+    allowMultipleSelection: bool               = true,
+    allowDuplicates:        bool               = false,
     )
-  sLabel      = promptLabel
-  sInput      = ''
-  sResult     = []
-  sFinish     = false
-  sWinRestCmd = winrestcmd()
-  sBufnr      = OpenZeefBuffer(items)
+  sLabel                  = promptLabel
+  sAllowMultipleSelection = allowMultipleSelection
+  sAllowDuplicates        = allowDuplicates && allowMultipleSelection
+  sInput                  = ''
+  sResult                 = []
+  sFinish                 = false
+  sWinRestCmd             = winrestcmd()
+  sBufnr                  = OpenZeefBuffer(items)
 
   EventLoop()
 
   if !empty(sResult)
-    F(sResult)
+    Callback(sResult)
   endif
 enddef
 # }}}}
@@ -481,7 +503,7 @@ export def Buffer(props: dict<any> = {})
   var buffers = split(execute(cmd), "\n")
   map(buffers, (_, b): string => substitute(b, '"\(.*\)"\s*line\s*\d\+$', '\1', ''))
 
-  Open(buffers, SwitchToBuffer, 'Switch buffer')
+  Open(buffers, SwitchToBuffer, 'Switch buffer', false)
 enddef
 # }}}
 # Quickfix/Location List Filter {{{
@@ -493,7 +515,7 @@ def JumpToLocationListEntry(items: list<string>)
   execute 'lrewind' matchstr(items[0], '^\s*\d\+')
 enddef
 
-export def QuickfixList()
+export def QuickfixList(Callback = JumpToQuickfixEntry)
   var qflist = getqflist()
 
   if empty(qflist)
@@ -503,10 +525,10 @@ export def QuickfixList()
 
   var cmd = split(execute('clist'), "\n")
 
-  Open(cmd, JumpToQuickfixEntry, 'Filter quickfix entry')
+  Open(cmd, Callback, 'Filter quickfix entry')
 enddef
 
-export def LocationList(winnr: number)
+export def LocationList(winnr = 0, Callback = JumpToLocationListEntry)
   var loclist = getloclist(winnr)
 
   if empty(loclist)
@@ -516,7 +538,7 @@ export def LocationList(winnr: number)
 
   var cmd = split(execute('llist'), "\n")
 
-  Open(cmd, JumpToLocationListEntry, 'Filter loclist entry')
+  Open(cmd, Callback, 'Filter loclist entry')
 enddef
 # }}}
 # Find Color Scheme {{{
@@ -538,7 +560,7 @@ export def Colorscheme()
     endfor
   endif
 
-  Open(sColorschemes, SetColorscheme, 'Choose colorscheme')
+  Open(sColorschemes, SetColorscheme, 'Choose colorscheme', false)
 enddef
 # }}}
 # Buffer Tags Using Ctags {{{
@@ -582,7 +604,7 @@ export def BufferTags(ctagsPath = sCtagsBin)
 
   map(tags, (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', ''))
 
-  Open(tags, (t: list<string>) => JumpToTag(t[0], bufname), 'Choose tags')
+  Open(tags, (t: list<string>) => JumpToTag(t[0], bufname), 'Choose tag', false)
 enddef
 # }}}
 # }}}
