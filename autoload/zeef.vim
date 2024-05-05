@@ -53,6 +53,10 @@ def Min(m: number, n: number): number
 enddef
 
 def AddToSelection(item: string)
+  if empty(item)
+    return
+  endif
+
   if !sDuplicateInsertion && item->In(sResult)
     return
   endif
