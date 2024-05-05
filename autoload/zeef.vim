@@ -11,12 +11,12 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # Settings and Internal State {{{
-var sName:           string             = get(g:, 'zeef_stl_name', 'Zeef9')
+var sStatusLineName: string             = get(g:, 'zeef_stl_name', 'Zeef9')
 var sHeight:         number             = get(g:, 'zeef_height', 10) - 1
 var sPrompt:         string             = get(g:, 'zeef_prompt', '> ')
 var sSkipFirst:      number             = get(g:, 'zeef_skip_first', 0)
 var sHorizScroll:    number             = get(g:, 'zeef_horizontal_scroll', 5)
-var sPopupMaxHeight: number             = 100
+var sPopupMaxHeight: number             = get(g:, 'zeef_selection_popup_max_height', 100)
 var sBufnr:          number             = -1     # Zeef buffer number
 var sLabel:          string             = 'Zeef' # Prompt label
 var sInput:          string             = ''     # The user input
@@ -32,92 +32,45 @@ var sUndoStack:  list<bool> = []
 # Commands to restore the window layout when Zeef's window is closed
 var sWinRestCmd: string = ''
 # }}}
-# Selection Popup {{{
-def SelectionPopupClosed(winId: number, result: any = '')
-  sPopupId = -1
+# Helper Functions {{{
+def In(v: string, items: list<string>): bool
+  return index(items, v) != -1
 enddef
 
-def IsSelectionPopupVisible(): bool
-  return sPopupId > 0 && get(popup_getpos(sPopupId), 'visible', false)
+def NotIn(v: string, items: list<string>): bool
+  return index(items, v) == -1
 enddef
 
-def ShowSelectionPopup()
-  if sPopupId <= 0
-    sPopupId = popup_create(sResult, {
-      border: [1, 1, 1, 1],
-      borderchars: ['-', '|', '-', '|', '┌', '┐', '┘', '└'],
-      borderhighlight: ['Label'],
-      callback: SelectionPopupClosed,
-      close: 'button',
-      col: 1,
-      cursorline: false,
-      drag: false,
-      highlight: 'Identifier',
-      line: screenpos(bufwinid(sBufnr), 1, 1).row - 1,
-      minheight: 1,
-      maxheight: Min(sPopupMaxHeight, &lines - sHeight - 10),
-      padding: [0, 1, 0, 1],
-      pos: 'botleft',
-      resize: false,
-      scrollbar: true,
-      title: 'Selected Items',
-      minwidth: &columns - 5,
-      maxwidth: &columns - 5,
-      wrap: false,
-      zindex: 32000,
-    })
-  else
-    popup_settext(sPopupId, sResult)
-    popup_show(sPopupId)
-  endif
-enddef
-
-def HideSelectionPopup()
-  popup_hide(sPopupId)
-enddef
-
-def RefreshSelectionPopup()
-  if IsSelectionPopupVisible()
-    if len(sResult) > 0
-      popup_settext(sPopupId, sResult)
-    else
-      HideSelectionPopup()
-    endif
-  endif
-enddef
-# }}}
-# Helper Function {{{
 def Min(m: number, n: number): number
   return m < n ? m : n
 enddef
 
-def AddToSelection(lnum: number, allowDuplicates = false)
-  var line = getline(lnum)
-
-  if !allowDuplicates && index(sResult, line) != -1
+def AddToSelection(item: string, allowDuplicates = false)
+  if !allowDuplicates && item->In(sResult)
     return
   endif
 
-  add(sResult, getline(lnum))
-
-  if len(sResult) > 0
-    ShowSelectionPopup()
-  endif
+  sResult->add(item)
 enddef
 
-def RemoveFromSelection(lnum: number)
-  var line = getline(lnum)
+def RemoveFromSelection(item: string)
   var newResult: list<string> = []
 
-  for item in sResult
-    if item != line
-      newResult->add(item)
+  for result in sResult
+    if result != item
+      newResult->add(result)
     endif
   endfor
 
   sResult = newResult
+enddef
 
-  RefreshSelectionPopup()
+def ToggleItem(item: string)
+  if item->NotIn(sResult)
+    AddToSelection(item)
+  else
+    RemoveFromSelection(item)
+  endif
 enddef
 
 def EchoPrompt()
@@ -155,7 +108,7 @@ def FuzzyFilter(): number
 enddef
 
 def g:ZeefStatusLine(): string
-  return $'%#ZeefName# {sName} %* %l of %L' .. (empty(sResult) ? '' : $' ({len(sResult)} selected)')
+  return $'%#ZeefName# {sStatusLineName} %* %l of %L' .. (empty(sResult) ? '' : $' ({len(sResult)} selected)')
 enddef
 
 def OpenZeefBuffer(items: list<string>): number
@@ -198,15 +151,7 @@ def OpenZeefBuffer(items: list<string>): number
   return bufnr()
 enddef
 
-def CloseSelectionPopup()
-  if sPopupId > 0
-    popup_close(sPopupId)
-  endif
-  sPopupId = -1
-enddef
-
 def CloseZeefBuffer()
-  CloseSelectionPopup()
   wincmd p
   execute 'bwipe!' sBufnr
   execute sWinRestCmd
@@ -215,92 +160,178 @@ def CloseZeefBuffer()
   echo "\r"
 enddef
 # }}}
-# Actions {{{
-def Accept()
-  if empty(sResult)
-    add(sResult, getline('.'))
+# Selection Popup {{{
+def HideSelectionPopup()
+  popup_hide(sPopupId)
+enddef
+
+def ShowSelectionPopup()
+  if sPopupId <= 0
+    CreateSelectionPopup()
+  else
+    popup_settext(sPopupId, sResult)
+    popup_show(sPopupId)
+  endif
+enddef
+
+def UpdateSelectionPopupStatus()
+  if len(sResult) > 0
+    ShowSelectionPopup()
+  else
+    popup_settext(sPopupId, [''])
+    HideSelectionPopup()
+  endif
+enddef
+
+def SelectionPopupClosed(winid: number, result: any = '')
+  sPopupId = -1
+enddef
+
+def RemoveFromSelectionPopup(winid: number, key: string): bool
+  if key == "\<LeftMouse>"
+    var mousepos = getmousepos()
+
+    if mousepos.winid == winid
+      var item = getbufoneline(winbufnr(winid), mousepos.line)
+      RemoveFromSelection(item)
+      UpdateSelectionPopupStatus()
+      return true
+    endif
   endif
 
-  sFinish = true
-  CloseZeefBuffer()
+  return false
 enddef
 
-def Cancel()
+def CreateSelectionPopup()
+  sPopupId = popup_create(sResult, {
+    border: [1, 1, 1, 1],
+    borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+    borderhighlight: ['Label'],
+    callback: SelectionPopupClosed,
+    close: 'button',
+    col: 1,
+    cursorline: false,
+    drag: false,
+    filter: RemoveFromSelectionPopup,
+    highlight: 'Identifier',
+    line: screenpos(bufwinid(sBufnr), 1, 1).row - 1,
+    minheight: 1,
+    maxheight: Min(sPopupMaxHeight, &lines - sHeight - 10),
+    padding: [0, 1, 0, 1],
+    pos: 'botleft',
+    resize: false,
+    scrollbar: true,
+    title: 'Selected Items',
+    minwidth: &columns - 5,
+    maxwidth: &columns - 5,
+    wrap: false,
+    zindex: 32000,
+  })
+enddef
+
+def CloseSelectionPopup()
+  if sPopupId > 0
+    popup_close(sPopupId)
+  endif
+  sPopupId = -1
+enddef
+
+def IsSelectionPopupVisible(): bool
+  return sPopupId > 0 && get(popup_getpos(sPopupId), 'visible', false)
+enddef
+# }}}
+# Actions {{{
+def ActionAccept()
+  if empty(sResult)
+    sResult->add(getline('.'))
+  endif
+
+  CloseSelectionPopup()
   CloseZeefBuffer()
+  sFinish = true
+enddef
+
+def ActionCancel()
   sResult = []
+  CloseSelectionPopup()
+  CloseZeefBuffer()
   sFinish = true
 enddef
 
-def Clear()
+def ActionClearPrompt()
   silent undo 1
-
   sUndoStack = []
   sInput = ''
 enddef
 
-def DeselectAll()
+def ActionDeselectAll()
   sResult = []
-  popup_close(sPopupId)
-  sPopupId = -1
+  UpdateSelectionPopupStatus()
 enddef
 
-def DeselectCurrent()
-  var i = 1
-  var n = line('$')
+def ActionDeselectCurrent()
+  var items = getbufline(sBufnr, 1, '$')
 
-  while i <= n
-    RemoveFromSelection(i)
-    ++i
-  endwhile
+  for item in items
+    RemoveFromSelection(item)
+  endfor
+
+  UpdateSelectionPopupStatus()
 enddef
 
-def MoveUp()
+def ActionLeftClick()
+  var mousepos = getmousepos()
+
+  if mousepos.winid != bufwinid(sBufnr)
+    return
+  endif
+
+  ToggleItem(getline(mousepos.line))
+  UpdateSelectionPopupStatus()
+enddef
+
+def ActionMoveUp()
   normal k
 enddef
 
-def Passthrough()
+def ActionPassthrough()
   execute 'normal' sKeyPress
 enddef
 
-def ScrollLeft()
+def ActionScrollLeft()
   execute $'normal {sHorizScroll}zh'
 enddef
 
-def ScrollRight()
+def ActionScrollRight()
   execute $'normal {sHorizScroll}zl'
 enddef
 
-def SelectCurrent()
-  var i = 1
-  var n = line('$')
+def ActionSelectCurrent()
+  var items = getbufline(sBufnr, 1, '$')
 
-  while i <= n
-    AddToSelection(i)
-    ++i
-  endwhile
+  for item in items
+    AddToSelection(item)
+  endfor
+
+  UpdateSelectionPopupStatus()
 enddef
 
-def SplitAccept()
-  Accept()
-  sFinish = true
+def ActionSplitAccept()
+  ActionAccept()
   split
 enddef
 
-def TabNewAccept()
-  Accept()
-  sFinish = true
+def ActionTabNewAccept()
+  ActionAccept()
   tabnew
 enddef
 
-def Toggle()
-  if index(sResult, getline(line('.'))) == -1
-    AddToSelection(line('.'))
-  else
-    RemoveFromSelection(line('.'))
-  endif
+def ActionToggleItem()
+  ToggleItem(getline('.'))
+  UpdateSelectionPopupStatus()
 enddef
 
-def Undo()
+def ActionUndo()
   sInput = strcharpart(sInput, 0, strchars(sInput) - 1)
 
   if !empty(sUndoStack) && remove(sUndoStack, -1)
@@ -308,13 +339,12 @@ def Undo()
   endif
 enddef
 
-def VertSplitAccept()
-  Accept()
-  sFinish = true
+def ActionVertSplitAccept()
+  ActionAccept()
   vsplit
 enddef
 
-def ToggleSelected()
+def ActionToggleSelectionPopup()
   if IsSelectionPopupVisible()
     HideSelectionPopup()
   else
@@ -324,35 +354,36 @@ enddef
 # }}}
 # Key Map {{{
 var sKeyMap = {
-  "\<ScrollWheelDown>":  Passthrough,
-  "\<ScrollWheelLeft>":  Passthrough,
-  "\<ScrollWheelRight>": Passthrough,
-  "\<ScrollWheelUp>":    Passthrough,
-  "\<bs>":               Undo,
-  "\<c-a>":              SelectCurrent,
-  "\<c-b>":              Passthrough,
-  "\<c-d>":              Passthrough,
-  "\<c-e>":              Passthrough,
-  "\<c-f>":              Passthrough,
-  "\<c-g>":              DeselectAll,
-  "\<c-j>":              Passthrough,
-  "\<c-k>":              MoveUp,
-  "\<c-l>":              Clear,
-  "\<c-r>":              DeselectCurrent,
-  "\<c-s>":              SplitAccept,
-  "\<c-t>":              TabNewAccept,
-  "\<c-u>":              Passthrough,
-  "\<c-v>":              VertSplitAccept,
-  "\<c-w>":              ToggleSelected,
-  "\<c-y>":              Passthrough,
-  "\<c-z>":              Toggle,
-  "\<down>":             Passthrough,
-  "\<enter>":            Accept,
-  "\<esc>":              Cancel,
-  "\<left>":             ScrollLeft,
-  "\<right>":            ScrollRight,
-  "\<up>":               Passthrough,
-  '':                    Cancel,
+  "\<LeftMouse>":        ActionLeftClick,
+  "\<ScrollWheelDown>":  ActionPassthrough,
+  "\<ScrollWheelLeft>":  ActionPassthrough,
+  "\<ScrollWheelRight>": ActionPassthrough,
+  "\<ScrollWheelUp>":    ActionPassthrough,
+  "\<bs>":               ActionUndo,
+  "\<c-a>":              ActionSelectCurrent,
+  "\<c-b>":              ActionPassthrough,
+  "\<c-d>":              ActionPassthrough,
+  "\<c-e>":              ActionPassthrough,
+  "\<c-f>":              ActionPassthrough,
+  "\<c-g>":              ActionDeselectAll,
+  "\<c-j>":              ActionPassthrough,
+  "\<c-k>":              ActionMoveUp,
+  "\<c-l>":              ActionClearPrompt,
+  "\<c-r>":              ActionDeselectCurrent,
+  "\<c-s>":              ActionSplitAccept,
+  "\<c-t>":              ActionTabNewAccept,
+  "\<c-u>":              ActionPassthrough,
+  "\<c-v>":              ActionVertSplitAccept,
+  "\<c-w>":              ActionToggleSelectionPopup,
+  "\<c-y>":              ActionPassthrough,
+  "\<c-z>":              ActionToggleItem,
+  "\<down>":             ActionPassthrough,
+  "\<enter>":            ActionAccept,
+  "\<esc>":              ActionCancel,
+  "\<left>":             ActionScrollLeft,
+  "\<right>":            ActionScrollRight,
+  "\<up>":               ActionPassthrough,
+  '':                    ActionCancel,
 }
 # }}}
 # Event Processing  {{{
@@ -366,18 +397,18 @@ def GetKeyPress(): string
   return ''
 enddef
 
-def ProcessKeyPress()
-  if sKeyMap->has_key(sKeyPress)
-    sKeyMap[sKeyPress]()
+def ProcessKeyPress(key: string)
+  if sKeyMap->has_key(key)
+    sKeyMap[key]()
     return
   endif
 
   # Skip other non-printable characters
-  if char2nr(sKeyPress[0]) == 0x80
+  if char2nr(key[0]) == 0x80
     return
   endif
 
-  sInput ..= sKeyPress
+  sInput ..= key
 
   if strchars(sInput) > sSkipFirst
     var old_seq = get(undotree(), 'seq_cur', 0)
@@ -392,7 +423,7 @@ def EventLoop()
   while true
     EchoPrompt()
     sKeyPress = GetKeyPress()
-    ProcessKeyPress()
+    ProcessKeyPress(sKeyPress)
 
     if sFinish
       break
@@ -418,7 +449,7 @@ export def Open(
   endif
 enddef
 # }}}}
-# Examples {{{
+# Zeefs {{{
 # Path Filters {{{
 
 def SetArglist(items: list<string>)
@@ -529,29 +560,29 @@ const sCtagsTypes = extend({
   'tex':     'latex',
 }, get(g:, 'zeef_ctags_types', {}))
 
-def Tags(path: string, filetype: string, ctagsPath = sCtagsBin): list<string>
-  var language = get(sCtagsTypes, filetype, filetypes)
-  var filepath  = shellescape(expand(path))
+def Tags(path: string, filetype: string, ctagsPath: string): list<string>
+  var language = get(sCtagsTypes, filetype, filetype)
+  var filepath = shellescape(expand(path))
 
   return systemlist(
     $'{ctagsPath} -f - --sort=no --excmd=number --fields= --extras=+F --language-force={language} {filepath}'
   )
 enddef
 
-def JumpToTag(items: list<string>, bufname: string)
-  if items[0] =~ '^\d\+'
-    var [lnum, tag] = split(items[0], '\s\+')
+def JumpToTag(item: string, bufname: string)
+  if item =~ '^\d\+'
+    var [lnum, _] = split(item, '\s\+')
     execute $'buffer +{lnum} {bufname}'
   endif
 enddef
 
-export def BufferTags()
+export def BufferTags(ctagsPath = sCtagsBin)
   var bufname = bufname("%")
-  var tags = map(Tags(bufname, &ft),
-    (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', '')
-  )
+  var tags = Tags(bufname, &ft, ctagsPath)
 
-  Open(tags, (t: string) => JumpToTag(t, bufname), 'Choose tags')
+  map(tags, (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', ''))
+
+  Open(tags, (t: list<string>) => JumpToTag(t[0], bufname), 'Choose tags')
 enddef
 # }}}
 # }}}
