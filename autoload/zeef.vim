@@ -511,7 +511,7 @@ enddef
 
 # Filter a list of paths and populate the arglist with the selected items.
 export def Args(paths: list<string>)
-  Open(paths, SetArglist, 'Choose files', true)
+  Open(paths, SetArglist, 'Choose files')
 enddef
 
 # Ditto, but use the paths in the specified directory
