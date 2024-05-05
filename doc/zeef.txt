@@ -19,7 +19,7 @@ CONTENTS				*zeef-contents*
 ==============================================================================
 1. Introduction				*zeef-introduction*
 
-Zeef is a pure autoload interactive fuzzy filter for a |List| of items
+Zeef is a pure autoload interactive fuzzy filter for a |List| of items,
 entirely written in Vim 9 script. Zeef requires Vim 9.1 or later, built with
 |+popupwin| and |+textprop|.
 
@@ -34,8 +34,8 @@ selected items. Press <enter> to invoke a callback with the selected item(s),
 or with the item under the cursor if nothing was selected. Press <esc> to
 cancel. The default callback just echoes the selected items.
 
-The following is the complete list of keys you can use when the Zeef
-buffer is open.
+The following is the complete list of special keys you can use when Zeef is
+open.
 
 - <c-k> or <up>: moves up one line.
 - <c-j> or <down>: moves down one line.
@@ -49,18 +49,18 @@ buffer is open.
 - <c-g>: deselects all items.
 - <c-a>: selects all currently filtered items.
 - <c-r>: deselects all currently filtered items.
-- <c-p>: toggles the selected items popup.
+- <c-p>: toggles the display of the selected items popup.
 - <esc>, <c-c>: closes Zeef without performing any action.
 - <enter>: accepts the current choice.
-- <c-s>, <c-v>, <c-t>: same as <enter>, but also opens a horizontal split,
+- <c-s>, <c-v>, <c-t>: same as <enter>, but also open a horizontal split,
   vertical split or tab window, respectively.
 
 Zeef supports using the mouse: you may select and deselect by clicking on an
 item, and you may use the mouse to scroll both vertically and horizontally.
 These are the supported mouse events:
 
-- <LeftMouse>: in Zeef buffer, selects or deselects an item; in the selected
-  items popup, removes an item from the list of selected items.
+- <LeftMouse>: in the Zeef buffer, selects or deselects an item; in the
+  selected items popup, removes an item from the list of selected items.
 - <ScrollWheelUp>, <ScrollWheelDown>: vertical scrolling.
 - <ScrollWheelLeft>, <ScrollWheelRight>: horizontal scrolling.
 
