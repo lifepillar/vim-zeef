@@ -528,7 +528,7 @@ enddef
 
 # props is a dictionary with the following keys:
 #   - unlisted: when set to true, show also unlisted buffers
-export def Buffer(props: dict<any> = {})
+export def BufferSwitcher(props: dict<any> = {})
   var showUnlisted = get(props, 'unlisted', false)
   var cmd = 'ls' .. (showUnlisted ? '!' : '')
   var buffers = split(execute(cmd), "\n")
@@ -579,7 +579,7 @@ def SetColorscheme(items: list<string>)
   execute 'colorscheme' items[0]
 enddef
 
-export def Colorscheme()
+export def ColorschemeSwitcher()
   if empty(sColorschemes)
     var searchPaths = [
       globpath(&runtimepath, 'colors/*.vim', 0, 1),
