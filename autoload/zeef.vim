@@ -28,8 +28,9 @@ var sKeyPress:               string       = ''     # Last key press
 var sResult:                 list<string> = []     # The selected items
 var sFinish:                 bool         = false  # When true, exit the event loop
 var sPopupId:                number       = -1     # ID of the selection popup (for multiple selection)
-var sAllowMultipleSelection: bool         = true   # Whether muliple selections are allowed
-var sAllowDuplicates:        bool         = false  # Whether duplicate items in the result are allowed
+var sMultipleSelection:      bool         = true   # Whether muliple selections are allowed
+var sDuplicateInsertion:     bool         = false  # Whether duplicate items in the result are allowed
+var sDuplicateDeletion:      bool         = true   # Whether all duplicates should be removed when one is removed
 
 # Stack of booleans that tells whether to undo when pressing backspace.
 # If the top of the stack is true then undo; if it is false, do not undo.
@@ -51,8 +52,8 @@ def Min(m: number, n: number): number
   return m < n ? m : n
 enddef
 
-def AddToSelection(item: string, allowDuplicates = false)
-  if !allowDuplicates && item->In(sResult)
+def AddToSelection(item: string)
+  if !sDuplicateInsertion && item->In(sResult)
     return
   endif
 
@@ -60,15 +61,23 @@ def AddToSelection(item: string, allowDuplicates = false)
 enddef
 
 def RemoveFromSelection(item: string)
-  var newResult: list<string> = []
+  if sDuplicateInsertion && sDuplicateDeletion # Remove all occurrences of item
+    var newResult: list<string> = []
 
-  for result in sResult
-    if result != item
-      newResult->add(result)
+    for result in sResult
+      if result != item
+        newResult->add(result)
+      endif
+    endfor
+
+    sResult = newResult
+  else # Remove one occurrence of item
+    var i = sResult->index(item)
+
+    if i > -1
+      remove(sResult, i)
     endif
-  endfor
-
-  sResult = newResult
+  endif
 enddef
 
 def ToggleItem(item: string)
@@ -292,6 +301,11 @@ def ActionDeselectCurrent()
   UpdateSelectionPopupStatus()
 enddef
 
+def ActionDeselectItem()
+  RemoveFromSelection(getbufoneline(sBufnr, line('.')))
+  UpdateSelectionPopupStatus()
+enddef
+
 def ActionLeftClick()
   var mousepos = getmousepos()
 
@@ -320,7 +334,7 @@ def ActionScrollRight()
 enddef
 
 def ActionSelectCurrent()
-  if sAllowMultipleSelection
+  if sMultipleSelection
     var items = getbufline(sBufnr, 1, '$')
 
     for item in items
@@ -328,9 +342,18 @@ def ActionSelectCurrent()
     endfor
 
     UpdateSelectionPopupStatus()
-  elseif len(sResult) == 0
-    ActionToggleItem()
+  else
+    ActionSelectItem()
   endif
+enddef
+
+def ActionSelectItem()
+  if !sMultipleSelection && len(sResult) > 0
+    return
+  endif
+
+  AddToSelection(getbufoneline(sBufnr, line('.')))
+  UpdateSelectionPopupStatus()
 enddef
 
 def ActionSplitAccept()
@@ -346,7 +369,7 @@ enddef
 def ActionToggleItem()
   var item = getbufoneline(sBufnr, line('.'))
 
-  if !sAllowMultipleSelection && len(sResult) > 0 && item->NotIn(sResult)
+  if !sMultipleSelection && len(sResult) > 0 && item->NotIn(sResult)
     return
   endif
 
@@ -392,19 +415,21 @@ var sKeyMap = {
   "\<c-j>":              ActionPassthrough,
   "\<c-k>":              ActionMoveUp,
   "\<c-l>":              ActionClearPrompt,
+  "\<c-p>":              ActionToggleSelectionPopup,
   "\<c-r>":              ActionDeselectCurrent,
   "\<c-s>":              ActionSplitAccept,
   "\<c-t>":              ActionTabNewAccept,
   "\<c-u>":              ActionPassthrough,
   "\<c-v>":              ActionVertSplitAccept,
-  "\<c-w>":              ActionToggleSelectionPopup,
+  "\<c-x>":              ActionToggleItem,
   "\<c-y>":              ActionPassthrough,
-  "\<c-z>":              ActionToggleItem,
   "\<down>":             ActionPassthrough,
   "\<enter>":            ActionAccept,
   "\<esc>":              ActionCancel,
   "\<left>":             ActionScrollLeft,
   "\<right>":            ActionScrollRight,
+  "\<s-tab>":            ActionDeselectItem,
+  "\<tab>":              ActionSelectItem,
   "\<up>":               ActionPassthrough,
   '':                    ActionCancel,
 }
@@ -460,12 +485,14 @@ export def Open(
     items:                  list<string>,
     Callback:               func(list<string>) = EchoResult,
     promptLabel:            string             = 'Zeef',
-    allowMultipleSelection: bool               = true,
-    allowDuplicates:        bool               = false,
+    multipleSelection:      bool               = true,
+    duplicateInsertion:     bool               = false,
+    duplicateDeletion:      bool               = false,
     )
   sLabel                  = promptLabel
-  sAllowMultipleSelection = allowMultipleSelection
-  sAllowDuplicates        = allowDuplicates && allowMultipleSelection
+  sMultipleSelection      = multipleSelection
+  sDuplicateInsertion     = duplicateInsertion && multipleSelection
+  sDuplicateDeletion      = sDuplicateInsertion && duplicateDeletion
   sInput                  = ''
   sResult                 = []
   sFinish                 = false
@@ -488,14 +515,14 @@ enddef
 
 # Filter a list of paths and populate the arglist with the selected items.
 export def Args(paths: list<string>)
-  Open(paths, SetArglist, 'Choose files')
+  Open(paths, SetArglist, 'Choose files', true)
 enddef
 
 # Ditto, but use the paths in the specified directory
 export def Files(dir = '.')
   var cmd = executable('rg') ? $"rg --files '{dir}'" : $"find '{dir}' -type f"
 
-  Open(systemlist(cmd), SetArglist, 'Choose files', true, true)
+  Open(systemlist(cmd), SetArglist, 'Choose files')
 enddef
 # }}}
 # Buffer Switcher {{{
