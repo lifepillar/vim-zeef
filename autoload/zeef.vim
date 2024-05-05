@@ -427,7 +427,8 @@ def ProcessKeyPress(key: string)
   endif
 
   # Skip other non-printable characters
-  if char2nr(key[0]) == 0x80
+  var charCode = char2nr(key[0])
+  if charCode == 0x80 || charCode < 0x20
     return
   endif
 
