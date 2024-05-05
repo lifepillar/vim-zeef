@@ -211,6 +211,8 @@ enddef
 def CreateSelectionPopup()
   hi default link ZeefPopupWinColor Normal
   hi default link ZeefPopupBorderColor Identifier
+  hi default link ZeefPopupScrollbarColor PmenuSbar
+  hi default link ZeefPopupScrollbarThumbColor PmenuThumb
 
   sPopupId = popup_create(sResult, {
     border: [1, 1, 1, 1],
@@ -230,6 +232,8 @@ def CreateSelectionPopup()
     pos: 'botleft',
     resize: false,
     scrollbar: true,
+    scrollbarhighlight: 'ZeefPopupScrollbarColor',
+    thumbhighlight: 'ZeefPopupScrollbarThumbColor',
     title: 'Selected Items',
     minwidth: &columns - 5,
     maxwidth: &columns - 5,
@@ -490,7 +494,7 @@ enddef
 export def Files(dir = '.')
   var cmd = executable('rg') ? $"rg --files '{dir}'" : $"find '{dir}' -type f"
 
-  Open(systemlist(cmd), SetArglist, 'Choose files')
+  Open(systemlist(cmd), SetArglist, 'Choose files', true, true)
 enddef
 # }}}
 # Buffer Switcher {{{
