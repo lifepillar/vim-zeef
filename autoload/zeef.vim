@@ -118,7 +118,7 @@ def FuzzyFilter(): number
   return 0
 enddef
 
-def g:ZeefStatusLine(): string
+def! g:ZeefStatusLine(): string
   return $'%#ZeefName# {sStatusLineName} %* %l of %L' .. (empty(sResult) ? '' : $' ({len(sResult)} selected)')
 enddef
 
