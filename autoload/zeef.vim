@@ -209,17 +209,20 @@ def RemoveFromSelectionPopup(winid: number, key: string): bool
 enddef
 
 def CreateSelectionPopup()
+  hi default link ZeefPopupWinColor Normal
+  hi default link ZeefPopupBorderColor Identifier
+
   sPopupId = popup_create(sResult, {
     border: [1, 1, 1, 1],
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
-    borderhighlight: ['Label'],
+    borderhighlight: ['ZeefPopupBorderColor'],
     callback: SelectionPopupClosed,
     close: 'button',
     col: 1,
     cursorline: false,
     drag: false,
     filter: RemoveFromSelectionPopup,
-    highlight: 'Identifier',
+    highlight: 'ZeefPopupBorderColor',
     line: screenpos(bufwinid(sBufnr), 1, 1).row - 1,
     minheight: 1,
     maxheight: Min(sPopupMaxHeight, &lines - sHeight - 10),
