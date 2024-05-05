@@ -2,15 +2,7 @@ vim9script
 
 # Requirements Check {{{
 if !has('popupwin') || !has('textprop') || v:version < 901
-  export def Open(
-      items: list<string>,
-      F:     func(list<string>) = null_function,
-      promptLabel               = '',
-      allowMultipleSelection    = true,
-      allowDuplicates           = false,
-      )
-    echomsg 'Zeef requires Vim 9.1 compiled with popupwin and textprop.'
-  enddef
+  echomsg 'Zeef requires Vim 9.1 compiled with popupwin and textprop.'
   finish
 endif
 # }}}
