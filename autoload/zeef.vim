@@ -9,7 +9,7 @@ endif
 # User Configuration {{{
 export var winheight       = get(g:, 'zeef_winheight',      10    )
 export var stlname         = get(g:, 'zeef_stlname',        'Zeef')
-export var prompt          = get(g:, 'zeef_prompt',         '❯❯ ' )
+export var prompt          = get(g:, 'zeef_prompt',         ' ❯ ' )
 export var skipfirst       = get(g:, 'zeef_skipfirst',      0     )
 export var sidescroll      = get(g:, 'zeef_sidescroll',     5     )
 export var popupmaxheight  = get(g:, 'zeef_popupmaxheight', 100   )
@@ -626,7 +626,6 @@ const sCtagsTypes = {
 }
 
 def Tags(path: string, filetype: string, ctagsPath: string, ctagsTypes: dict<string>): list<string>
-  echomsg ctagsTypes
   var language = get(ctagsTypes, filetype, filetype)
   var filepath = shellescape(expand(path))
 
