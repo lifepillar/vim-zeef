@@ -82,8 +82,8 @@ to define your own zeefs that fit exactly your needs.
 ==============================================================================
 2. Functions					*zeef-functions*
 
-						*zeef.Open()*
-Open({items}, [{func}, {label}, {multi}, {dupInsert}, {dupDelete}, {aliases}])
+
+Open({items}, [{func}, {label}, {opts}])	*zeef.Open()*
 		Open a Zeef buffer at the bottom of the screen, populated with
 		a |List| of {items}.
 
@@ -97,25 +97,22 @@ Open({items}, [{func}, {label}, {multi}, {dupInsert}, {dupDelete}, {aliases}])
 		the cursor. It should be short and informative about the
 		purpose of the zeef.
 
-		By default, the Zeef buffer allows multiple selections: set
-		{multi} to |false| to allow selecting at most one item.
+		{opts} is a |Dictionary| which may contain the following
+		entries:
 
-		The last two optional arguments are two more boolean flags
-		relevant only when multiple selections are enabled. When
-		{dupInsert} is |true|, multiple identical items may be added
-		to the list of selected items. By default, {dupInsert} is
-		|false| and selected entries are kept unique. When {dupDelete}
-		is |true|, removing an item from the selected items deletes
-		all the copies of that item. By default, {dupDelete} is
-		|false| and only the first copy is deleted. Of course, if
-		{dupInsert} is |false|, the value of {dupDelete} is
-		irrelevant.
-
-		{aliases} is a |Dictionary| defining aliases for the default
-		keys, similarly to |zeef.keyaliases|. Differently from
-		|zeef.keyaliases|, though, the {aliases} are valid only until
-		|zeef.Open()| returns, so they are specific to a particular
-		zeef.
+		- `multi`: set to |true| to allow multiple selections (the
+		  default); set to |false| for single selection.
+		- `dupinsert`: when |true|, multiple identical items may be
+		  added to the list of selected items. By default, 
+		  selected entries are kept unique.
+		- `dupdelete`: when |true|, removing an item from the selected
+		  items deletes all the copies of that item. By default,
+		  only the first copy is deleted. Of course, if `dupInsert` is
+		  set to |false|, the value of `dupdelete` is irrelevant.
+		- `keyaliases`: this is a dictionary like |zeef.keyaliases|, but
+		  only for the current Zeef buffer.
+		- `keymap`: this is a dictionary like |zeef.keymap|, but only
+		  for the current Zeef buffer.
 
 Args({paths})					*zeef.Args()*
 		Interactively filter a list of paths and populate the arglist
@@ -195,9 +192,10 @@ LastKeyPressed()				*zeef.LastKeyPressed()*
 		may alternatively pass the binding as an argument to
 		|zeef.Open()|:
 >
-		zeef.Open(buffers,
-		  Callback, 'Choose', true, false, false,
-		  {"\<c-d>": "\<enter>"}
+		zeef.Open(
+		  buffers, Callback, 'Choose', {
+		    keyaliases: {"\<c-d>": "\<enter>"}
+		  }
 		)
 <
 LocationList([{nr}, {func}])			*zeef.LocationList()*
@@ -218,6 +216,10 @@ QuickfixList([{func}])				*zeef.QuickfixList()*
 >
 		:call zeef#QuickfixList()
 <
+SelectedItems()					*zeef.SelectedItems()*
+		Return the currently selected items. This is mainly useful in
+		functions used with |zeef.keymap|.
+
 =============================================================================
 3. Customization				*zeef-customization*
 
@@ -269,9 +271,10 @@ The target keys must be those defined in |zeef-introduction|.
 
 						*'zeef.keymap'*
 						*'g:zeef_keymap'*
-A |Dictionary| that maps keys to arbitrary functions. You may override any key
-and map your own functions. Such functions should take no arguments and return
-no value.
+A |Dictionary| that maps keys to arbitrary functions. Such functions should
+take no arguments and return no value. Inside such functions, you may get the
+last key press with |zeef.LastKeyPressed()| and the currently selected items
+with |zeef.SelectedItems()|.
 >
 	zeef.keymap: dict<func()> = {}
 <
