@@ -56,11 +56,10 @@ Any of the previous mappings can be overridden: see `:help zeef-customization`.
 
 How does Zeef differ from the several similar plugins already out there, you
 ask? The implementation is likely *the simplest possible*: as you type, Zeef
-uses `matchfuzzypos()` in a `formatexpr` function to “reformat” the displayed
-items according to the fuzzy matches. When you press backspace, `:undo` is used
-to restore the previous state. The core of this plugin is just that. It works
-surprisingly well, unless your list is very large (hundreds of thousands of
-lines).
+uses `matchfuzzypos()` to filter the displayed items according to the fuzzy
+matches. When you press backspace, `:undo` is used to restore the previous
+state. The core of this plugin is just that. It works surprisingly well, unless
+your list is very large (hundreds of thousands of lines).
 
 What can you do with Zeef? Whatever you want! Zeef is not bloated with features
 that you will never use: it is for people who wish to implement their own

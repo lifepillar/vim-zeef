@@ -127,10 +127,10 @@ def FuzzyFilter(): number
     opts['matchseq'] = true
   endif
 
-  var [lines, charpos, _] = matchfuzzypos(getbufline(bufnr(), 1, line('$')), sInput, opts)
+  var [lines, charpos, _] = matchfuzzypos(getbufline(sBufnr, 1, line('$')), sInput, opts)
 
-  deletebufline(bufnr(), 1, '$')
-  setbufline(bufnr(), 1, lines)
+  deletebufline(sBufnr, 1, '$')
+  setbufline(sBufnr, 1, lines)
 
   # Highlight matches
   var i = 0
@@ -172,7 +172,6 @@ def OpenZeefBuffer(items: list<string>): number
         \ cursorline
         \ filetype=zeef
         \ foldmethod=manual
-        \ formatexpr=FuzzyFilter()
         \ modifiable
         \ nobuflisted
         \ nocursorcolumn
@@ -495,7 +494,7 @@ def ProcessKeyPress(key: string)
 
   if strchars(sInput) > Config.SkipFirst()
     var old_seq = get(undotree(), 'seq_cur', 0)
-    normal gggqG
+    FuzzyFilter()
     var new_seq = get(undotree(), 'seq_cur', 0)
 
     add(sUndoStack, new_seq != old_seq) # new_seq != old_seq iff the buffer has changed
