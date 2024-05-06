@@ -120,7 +120,7 @@ def EchoResult(items: list<string>)
   echo sResult
 enddef
 
-def FuzzyFilter(): number
+def FuzzyFilter()
   var opts: dict<any> = {'limit': Config.Limit()}
 
   if Config.MatchSeq()
@@ -143,8 +143,6 @@ def FuzzyFilter(): number
     endfor
     ++i
   endwhile
-
-  return 0
 enddef
 
 def! g:ZeefStatusLine(): string
