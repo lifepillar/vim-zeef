@@ -519,21 +519,18 @@ export def Open(
     items:                  list<string>,
     Callback:               func(list<string>) = EchoResult,
     promptLabel:            string             = 'Zeef',
-    multipleSelection:      bool               = true,
-    duplicateInsertion:     bool               = false,
-    duplicateDeletion:      bool               = false,
-    aliases:                dict<string>       = {},
+    options:                dict<any>          = {},
     )
   sLabel              = promptLabel
-  sMultipleSelection  = multipleSelection
-  sDuplicateInsertion = duplicateInsertion && multipleSelection
-  sDuplicateDeletion  = sDuplicateInsertion && duplicateDeletion
+  sMultipleSelection  = get(options, 'multi', true)
+  sDuplicateInsertion = get(options, 'dupinsert', false) && sMultipleSelection
+  sDuplicateDeletion  = get(options, 'dupdelete', false) && sDuplicateInsertion
+  sKeyMap             = extend(extend(get(options, 'keymap', {}), Config.KeyMap(), 'keep'), cDefaultKeyMap, 'keep')
+  sKeyAliases         = extend(get(options, 'keyaliases', {}), Config.KeyAliases(), 'keep')
+  sWinRestCmd         = winrestcmd()
   sInput              = ''
   sResult             = []
   sFinish             = false
-  sKeyMap             = extend(extend({}, Config.KeyMap()), cDefaultKeyMap, 'keep')
-  sKeyAliases         = extend(aliases, Config.KeyAliases(), 'keep')
-  sWinRestCmd         = winrestcmd()
   sBufnr              = OpenZeefBuffer(items)
 
   EventLoop()
@@ -548,6 +545,10 @@ enddef
 
 export def LastKeyPressed(): string
   return sKeyAlias
+enddef
+
+export def SelectedItems(): list<string>
+  return sResult
 enddef
 # }}}}
 # Zeefs {{{
@@ -583,7 +584,7 @@ export def BufferSwitcher(props: dict<any> = {})
   var buffers = split(execute(cmd), "\n")
   map(buffers, (_, b): string => substitute(b, '"\(.*\)"\s*line\s*\d\+$', '\1', ''))
 
-  Open(buffers, SwitchToBuffer, 'Switch buffer', false)
+  Open(buffers, SwitchToBuffer, 'Switch buffer', {multi: false})
 enddef
 # }}}
 # Quickfix/Location List Filter {{{
@@ -638,7 +639,7 @@ export def ColorschemeSwitcher()
     endfor
   endif
 
-  Open(colorschemes, SetColorscheme, 'Choose colorscheme', false)
+  Open(colorschemes, SetColorscheme, 'Choose colorscheme', {multi: false})
 enddef
 # }}}
 # Buffer Tags Using Ctags {{{
@@ -682,7 +683,7 @@ export def BufferTags(ctagsTypes: dict<string> = {}, ctagsPath = sCtagsBin)
 
   map(tags, (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', ''))
 
-  Open(tags, (t: list<string>) => JumpToTag(t[0], bufname), 'Choose tag', false)
+  Open(tags, (t: list<string>) => JumpToTag(t[0], bufname), 'Choose tag', {multi: false})
 enddef
 # }}}
 # }}}
