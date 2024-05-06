@@ -294,7 +294,11 @@ enddef
 # Actions {{{
 def ActionAccept()
   if empty(sResult)
-    sResult->add(getline('.'))
+    var line = getbufoneline(sBufnr, line('.'))
+
+    if !empty(line)
+      sResult->add(line)
+    endif
   endif
 
   CloseSelectionPopup()
