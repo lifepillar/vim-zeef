@@ -346,7 +346,7 @@ def ActionLeftClick()
     return
   endif
 
-  ToggleItem(getline(mousepos.line))
+  ToggleItem(getbufoneline(sBufnr, mousepos.line))
   UpdateSelectionPopupStatus()
 enddef
 
