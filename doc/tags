@@ -1,3 +1,4 @@
+'g:zeef_fuzzy'	zeef.txt	/*'g:zeef_fuzzy'*
 'g:zeef_keyaliases'	zeef.txt	/*'g:zeef_keyaliases'*
 'g:zeef_keymap'	zeef.txt	/*'g:zeef_keymap'*
 'g:zeef_limit'	zeef.txt	/*'g:zeef_limit'*
@@ -9,6 +10,7 @@
 'g:zeef_stlname'	zeef.txt	/*'g:zeef_stlname'*
 'g:zeef_winheight'	zeef.txt	/*'g:zeef_winheight'*
 'g:zeef_winhighlight'	zeef.txt	/*'g:zeef_winhighlight'*
+'zeef.fuzzy'	zeef.txt	/*'zeef.fuzzy'*
 'zeef.keyaliases'	zeef.txt	/*'zeef.keyaliases'*
 'zeef.keymap'	zeef.txt	/*'zeef.keymap'*
 'zeef.limit'	zeef.txt	/*'zeef.limit'*
@@ -33,4 +35,5 @@ zeef.LastKeyPressed()	zeef.txt	/*zeef.LastKeyPressed()*
 zeef.LocationList()	zeef.txt	/*zeef.LocationList()*
 zeef.Open()	zeef.txt	/*zeef.Open()*
 zeef.QuickfixList()	zeef.txt	/*zeef.QuickfixList()*
+zeef.SelectedItems()	zeef.txt	/*zeef.SelectedItems()*
 zeef.txt	zeef.txt	/*zeef.txt*

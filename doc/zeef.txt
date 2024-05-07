@@ -50,6 +50,7 @@ open.
 - <c-a>: selects all currently filtered items.
 - <c-r>: deselects all currently filtered items.
 - <c-p>: toggles the display of the selected items popup.
+- <c-z>: toggles between exact and fuzzy matching.
 - <esc>, <c-c>: closes Zeef without performing any action.
 - <enter>: accepts the current choice.
 - <c-s>, <c-v>, <c-t>: same as <enter>, but also open a horizontal split,
@@ -238,16 +239,27 @@ and the other directly sets Zeef script variables. Which one to use is mostly
 a matter of taste.
 
 For each global setting of the form `g:zeef_<setting>`, Zeef exports a script
-variable called `<setting>` with the same meaning. For example, the height of
-the Zeef buffer can be changed by setting |g:zeef_winheight| or by setting
-|zeef.winheight|. The latter is recommended because settings may be changed on
-the fly and take effect the next time Zeef is open. Changes to global
-variables are applied only if they are done before the Zeef script is loaded.
+variable called `<setting>` with the same meaning. For example, to use exact
+pattern matching when the Zeef buffer is opened, set |g:zeef_fuzzy| or
+|zeef.fuzzy| to |false|. The latter is recommended because it does not pollute
+the globals space and settings may be changed on the fly and take effect the
+next time Zeef is open. Changes to global variables are applied only if they
+are done before the Zeef script is loaded.
 
 Note: from the command line you may have to use a slightly different syntax.
-For example, to adjust the height of the Zeef window:
+For example, to use exact pattern matching on opening:
 >
-	:let zeef#winheight = 5
+	:let zeef#fuzzy = 0
+<
+Prepend `let`, use `#` instead of `.` and `0/1` instead of `false/true`.
+
+						*'zeef.fuzzy'*
+						*'g:zeef_fuzzy'*
+When |true|, open Zeef buffers in fuzzy mode. Set to |false| to open Zeef
+buffers in exact mode. You may use CTRL-Z to switch between fuzzy and exact
+search at any time while the Zeef buffer is open.
+>
+	zeef.fuzzy = true
 <
 						*'zeef.keyaliases'*
 						*'g:zeef_keyaliases'*

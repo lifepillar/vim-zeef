@@ -7,19 +7,22 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # User Configuration {{{
-export var keyaliases:     dict<string> = get(g:, 'zeef_keyaliases',     {}    )
-export var keymap:         dict<func()> = get(g:, 'zeef_keymap',         {}    )
-export var limit:          number       = get(g:, 'zeef_limit',          0     )
-export var matchseq:       bool         = get(g:, 'zeef_matchseq',       false )
-export var popupmaxheight: number       = get(g:, 'zeef_popupmaxheight', 100   )
-export var prompt:         string       = get(g:, 'zeef_prompt',         ' ❯ ' )
-export var sidescroll:     number       = get(g:, 'zeef_sidescroll',     5     )
-export var skipfirst:      number       = get(g:, 'zeef_skipfirst',      0     )
-export var stlname:        string       = get(g:, 'zeef_stlname',        'Zeef')
-export var winheight:      number       = get(g:, 'zeef_winheight',      10    )
-export var winhighlight:   string       = get(g:, 'zeef_winhighlight',   ''    )
+export var fuzzy:          bool                 = get(g:, 'zeef_fuzzy',          true  )
+export var keyaliases:     dict<string>         = get(g:, 'zeef_keyaliases',     {}    )
+export var keymap:         dict<func()>         = get(g:, 'zeef_keymap',         {}    )
+export var limit:          number               = get(g:, 'zeef_limit',          0     )
+export var matchseq:       bool                 = get(g:, 'zeef_matchseq',       false )
+export var popupmaxheight: number               = get(g:, 'zeef_popupmaxheight', 100   )
+export var prompt:         string               = get(g:, 'zeef_prompt',         ' ❯ ' )
+export var sidescroll:     number               = get(g:, 'zeef_sidescroll',     5     )
+export var skipfirst:      number               = get(g:, 'zeef_skipfirst',      0     )
+export var stlname:        string               = get(g:, 'zeef_stlname',        'Zeef')
+export var wildchar:       string               = get(g:, 'zeef_wildchar',       ' '   )
+export var winheight:      number               = get(g:, 'zeef_winheight',      10    )
+export var winhighlight:   string               = get(g:, 'zeef_winhighlight',   ''    )
 
 class Config
+  static var Fuzzy          = () => fuzzy
   static var KeyAliases     = () => keyaliases
   static var KeyMap         = () => keymap
   static var Limit          = () => limit
@@ -29,12 +32,14 @@ class Config
   static var SideScroll     = () => sidescroll
   static var SkipFirst      = () => skipfirst
   static var StatusLineName = () => stlname
+  static var Wildchar       = () => wildchar
   static var WinHeight      = () => winheight
   static var WinHighlight   = () => winhighlight
 endclass
 # }}}
 # Internal State {{{
 var sBufnr:                  number       = -1     # Zeef buffer number
+var sFuzzy:                  bool         = true   # Use fuzzy filter?
 var sInput:                  string       = ''     # The user input
 var sKeyPress:               string       = ''     # Last (mapped) key press
 var sKeyAlias:               string       = ''     # The actual key press (different from sKeyPress if aliased)
@@ -118,6 +123,32 @@ enddef
 
 def EchoResult(items: list<string>)
   echo sResult
+enddef
+
+# Default regexp filter for exact matching.
+#
+# This behaves mostly like globbing, except that ^ and $ can be used to anchor
+# a pattern. All characters are matched literally except ^, $, and the
+# wildchar; the latter matches zero 0 more characters.
+def Regexp(input: string): string
+  return substitute(escape(input, '~.\[:'), Config.Wildchar(), '.*', 'g')
+enddef
+
+def ExactFilter()
+  if empty(sInput)
+    return
+  endif
+
+  var regexp = Regexp(sInput)
+
+  try
+    execute 'silent keeppatterns g!:\m' .. regexp .. ':norm "_dd'
+  catch /^Vim\%((\a\+)\)\=:E/
+    var error = 1  # FIXME
+  endtry
+
+  clearmatches()
+  matchadd('ZeefMatch', '\c' .. regexp)
 enddef
 
 def FuzzyFilter()
@@ -396,6 +427,12 @@ def ActionTabNewAccept()
   tabnew
 enddef
 
+def ActionToggleFuzzy()
+  sFuzzy = !sFuzzy
+  ActionClearPrompt()
+  clearmatches()
+enddef
+
 def ActionToggleItem()
   var item = getbufoneline(sBufnr, line('.'))
 
@@ -412,6 +449,12 @@ def ActionUndo()
 
   if !empty(sUndoStack) && remove(sUndoStack, -1)
     silent undo
+  endif
+
+  clearmatches()
+
+  if !empty(sInput)
+    matchadd('ZeefMatch', '\c' .. Regexp(sInput))
   endif
 enddef
 
@@ -453,6 +496,7 @@ const cDefaultKeyMap = {
   "\<c-v>":              ActionVertSplitAccept,
   "\<c-x>":              ActionToggleItem,
   "\<c-y>":              ActionPassthrough,
+  "\<c-z>":              ActionToggleFuzzy,
   "\<down>":             ActionPassthrough,
   "\<enter>":            ActionAccept,
   "\<esc>":              ActionCancel,
@@ -492,7 +536,13 @@ def ProcessKeyPress(key: string)
 
   if strchars(sInput) > Config.SkipFirst()
     var old_seq = get(undotree(), 'seq_cur', 0)
-    FuzzyFilter()
+
+    if sFuzzy
+      FuzzyFilter()
+    else
+      ExactFilter()
+    endif
+
     var new_seq = get(undotree(), 'seq_cur', 0)
 
     add(sUndoStack, new_seq != old_seq) # new_seq != old_seq iff the buffer has changed
@@ -528,6 +578,7 @@ export def Open(
   sInput              = ''
   sResult             = []
   sFinish             = false
+  sFuzzy              = Config.Fuzzy()
   sBufnr              = OpenZeefBuffer(items)
 
   EventLoop()

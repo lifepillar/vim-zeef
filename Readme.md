@@ -38,6 +38,7 @@ open:
 - CTRL-A: selects all currently filtered lines.
 - CTRL-R: deselects all currently filtered lines.
 - CTRL-P: toggles the display of the selected items popup.
+- CTRL-Z: toggles between exact and fuzzy matching.
 - Esc, CTRL-C: closes Zeef without performing any action.
 - Enter: accepts the current choice.
 - CTRL-S, CTRL-V, CTRL-T: same as Enter, but also open a horizonal split,
