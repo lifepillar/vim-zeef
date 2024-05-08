@@ -147,6 +147,8 @@ def ExactFilter()
     var error = 1  # FIXME
   endtry
 
+  normal gg
+
   clearmatches()
   matchadd('ZeefMatch', '\c' .. regexp)
 enddef
@@ -449,6 +451,7 @@ def ActionUndo()
 
   if !empty(sUndoStack) && remove(sUndoStack, -1)
     silent undo
+    normal gg
   endif
 
   clearmatches()
