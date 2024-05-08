@@ -143,8 +143,7 @@ def ExactFilter()
 
   try
     execute 'silent keeppatterns g!:\m' .. regexp .. ':norm "_dd'
-  catch /^Vim\%((\a\+)\)\=:E/
-    var error = 1  # FIXME
+  catch /^Vim\%((\a\+)\)\=:E538:/  # Raised when all lines match
   endtry
 
   normal gg
