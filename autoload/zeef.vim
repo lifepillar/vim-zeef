@@ -7,19 +7,19 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # User Configuration {{{
-export var fuzzy:          bool                 = get(g:, 'zeef_fuzzy',          true  )
-export var keyaliases:     dict<string>         = get(g:, 'zeef_keyaliases',     {}    )
-export var keymap:         dict<func()>         = get(g:, 'zeef_keymap',         {}    )
-export var limit:          number               = get(g:, 'zeef_limit',          0     )
-export var matchseq:       bool                 = get(g:, 'zeef_matchseq',       false )
-export var popupmaxheight: number               = get(g:, 'zeef_popupmaxheight', 100   )
-export var prompt:         string               = get(g:, 'zeef_prompt',         ' ❯ ' )
-export var sidescroll:     number               = get(g:, 'zeef_sidescroll',     5     )
-export var skipfirst:      number               = get(g:, 'zeef_skipfirst',      0     )
-export var stlname:        string               = get(g:, 'zeef_stlname',        'Zeef')
-export var wildchar:       string               = get(g:, 'zeef_wildchar',       ' '   )
-export var winheight:      number               = get(g:, 'zeef_winheight',      10    )
-export var winhighlight:   string               = get(g:, 'zeef_winhighlight',   ''    )
+export var fuzzy:          bool         = get(g:, 'zeef_fuzzy',          true  )
+export var keyaliases:     dict<string> = get(g:, 'zeef_keyaliases',     {}    )
+export var keymap:         dict<func()> = get(g:, 'zeef_keymap',         {}    )
+export var limit:          number       = get(g:, 'zeef_limit',          0     )
+export var matchseq:       bool         = get(g:, 'zeef_matchseq',       false )
+export var popupmaxheight: number       = get(g:, 'zeef_popupmaxheight', 100   )
+export var prompt:         string       = get(g:, 'zeef_prompt',         ' ❯ ' )
+export var sidescroll:     number       = get(g:, 'zeef_sidescroll',     5     )
+export var skipfirst:      number       = get(g:, 'zeef_skipfirst',      0     )
+export var stlname:        string       = get(g:, 'zeef_stlname',        'Zeef')
+export var wildchar:       string       = get(g:, 'zeef_wildchar',       ' '   )
+export var winheight:      number       = get(g:, 'zeef_winheight',      10    )
+export var winhighlight:   string       = get(g:, 'zeef_winhighlight',   ''    )
 
 class Config
   static var Fuzzy          = () => fuzzy
@@ -39,15 +39,15 @@ endclass
 # }}}
 # Internal State {{{
 var sBufnr:                  number       = -1     # Zeef buffer number
-var sFuzzy:                  bool         = true   # Use fuzzy filter?
-var sInput:                  string       = ''     # The user input
-var sKeyPress:               string       = ''     # Last (mapped) key press
+var sFinish:                 bool         = false  # The event loop is exited when this becomes true
+var sFuzzy:                  bool         = true   # Use fuzzy matching?
+var sInput:                  string       = ''     # The current text typed by the user
 var sKeyAlias:               string       = ''     # The actual key press (different from sKeyPress if aliased)
 var sKeyAliases:             dict<string> = {}     # The current key aliases
-var sKeyMap:                 dict<func()> = {}     # Zeef key map
+var sKeyMap:                 dict<func()> = {}     # The current key map (key press -> action)
+var sKeyPress:               string       = ''     # Last key press (after aliasing is resolved)
+var sPopupId:                number       = -1     # ID of the Selected Items popup
 var sResult:                 list<string> = []     # The currently selected items
-var sFinish:                 bool         = false  # When true, exit the event loop
-var sPopupId:                number       = -1     # ID of the selection popup
 # The following are set when opening Zeef
 var sLabel:                  string       = 'Zeef' # Prompt label
 var sMultipleSelection:      bool         = true   # Whether muliple selections are allowed
@@ -134,7 +134,7 @@ def Regexp(input: string): string
   return substitute(escape(input, '~.\[:'), Config.Wildchar(), '.*', 'g')
 enddef
 
-def ExactFilter()
+def MatchExactly()
   if empty(sInput)
     return
   endif
@@ -152,7 +152,7 @@ def ExactFilter()
   matchadd('ZeefMatch', '\c' .. regexp)
 enddef
 
-def FuzzyFilter()
+def MatchFuzzily()
   var opts: dict<any> = {'limit': Config.Limit()}
 
   if Config.MatchSeq()
@@ -540,9 +540,9 @@ def ProcessKeyPress(key: string)
     var old_seq = get(undotree(), 'seq_cur', 0)
 
     if sFuzzy
-      FuzzyFilter()
+      MatchFuzzily()
     else
-      ExactFilter()
+      MatchExactly()
     endif
 
     var new_seq = get(undotree(), 'seq_cur', 0)
