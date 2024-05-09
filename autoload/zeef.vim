@@ -7,9 +7,9 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # User Configuration {{{
-export var exactSymbol:    string       = get(g:, 'zeef_exactsymbol',    '[Exact]')
+export var exactsymbol:    string       = get(g:, 'zeef_exactsymbol',    '[Exact]')
 export var fuzzy:          bool         = get(g:, 'zeef_fuzzy',          true     )
-export var fuzzySymbol:    string       = get(g:, 'zeef_fuzzysymbol',    '[Fuzzy]')
+export var fuzzysymbol:    string       = get(g:, 'zeef_fuzzysymbol',    '[Fuzzy]')
 export var keyaliases:     dict<string> = get(g:, 'zeef_keyaliases',     {}       )
 export var keymap:         dict<func()> = get(g:, 'zeef_keymap',         {}       )
 export var limit:          number       = get(g:, 'zeef_limit',          0        )
@@ -54,7 +54,7 @@ class Config
   static var Limit          = () => limit
   static var MatchSeq       = () => matchseq
   static var PopupMaxHeight = () => popupmaxheight
-  static var Prompt         = () => sLabel .. ' ' .. (sFuzzy ? fuzzySymbol : exactSymbol) .. prompt
+  static var Prompt         = () => sLabel .. ' ' .. (sFuzzy ? fuzzysymbol : exactsymbol) .. prompt
   static var SideScroll     = () => sidescroll
   static var SkipFirst      = () => skipfirst
   static var StatusLineName = () => stlname
