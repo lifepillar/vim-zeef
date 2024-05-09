@@ -253,6 +253,12 @@ For example, to use exact pattern matching on opening:
 <
 Prepend `let`, use `#` instead of `.` and `0/1` instead of `false/true`.
 
+						*'zeef.exactsymbol'*
+						*'g:zeef_exactsymbol'*
+The string to be used in the prompt to indicate that exact matching is active.
+>
+	zeef.exactsymbol = "[Exact]"
+<
 						*'zeef.fuzzy'*
 						*'g:zeef_fuzzy'*
 When |true|, open Zeef buffers in fuzzy mode. Set to |false| to open Zeef
@@ -260,6 +266,12 @@ buffers in exact mode. You may use CTRL-Z to switch between fuzzy and exact
 search at any time while the Zeef buffer is open.
 >
 	zeef.fuzzy = true
+<
+						*'zeef.fuzzysymbol'*
+						*'g:zeef_fuzzysymbol'*
+The string to be used in the prompt to indicate that fuzzy matching is active.
+>
+	zeef.fuzzysymbol = "[Fuzzy]"
 <
 						*'zeef.keyaliases'*
 						*'g:zeef_keyaliases'*

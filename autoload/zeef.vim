@@ -7,35 +7,21 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # User Configuration {{{
-export var fuzzy:          bool         = get(g:, 'zeef_fuzzy',          true  )
-export var keyaliases:     dict<string> = get(g:, 'zeef_keyaliases',     {}    )
-export var keymap:         dict<func()> = get(g:, 'zeef_keymap',         {}    )
-export var limit:          number       = get(g:, 'zeef_limit',          0     )
-export var matchseq:       bool         = get(g:, 'zeef_matchseq',       false )
-export var popupmaxheight: number       = get(g:, 'zeef_popupmaxheight', 100   )
-export var prompt:         string       = get(g:, 'zeef_prompt',         ' ❯ ' )
-export var sidescroll:     number       = get(g:, 'zeef_sidescroll',     5     )
-export var skipfirst:      number       = get(g:, 'zeef_skipfirst',      0     )
-export var stlname:        string       = get(g:, 'zeef_stlname',        'Zeef')
-export var wildchar:       string       = get(g:, 'zeef_wildchar',       ' '   )
-export var winheight:      number       = get(g:, 'zeef_winheight',      10    )
-export var winhighlight:   string       = get(g:, 'zeef_winhighlight',   ''    )
-
-class Config
-  static var Fuzzy          = () => fuzzy
-  static var KeyAliases     = () => keyaliases
-  static var KeyMap         = () => keymap
-  static var Limit          = () => limit
-  static var MatchSeq       = () => matchseq
-  static var PopupMaxHeight = () => popupmaxheight
-  static var Prompt         = () => prompt
-  static var SideScroll     = () => sidescroll
-  static var SkipFirst      = () => skipfirst
-  static var StatusLineName = () => stlname
-  static var Wildchar       = () => wildchar
-  static var WinHeight      = () => winheight
-  static var WinHighlight   = () => winhighlight
-endclass
+export var exactSymbol:    string       = get(g:, 'zeef_exactsymbol',    '[Exact]')
+export var fuzzy:          bool         = get(g:, 'zeef_fuzzy',          true     )
+export var fuzzySymbol:    string       = get(g:, 'zeef_fuzzysymbol',    '[Fuzzy]')
+export var keyaliases:     dict<string> = get(g:, 'zeef_keyaliases',     {}       )
+export var keymap:         dict<func()> = get(g:, 'zeef_keymap',         {}       )
+export var limit:          number       = get(g:, 'zeef_limit',          0        )
+export var matchseq:       bool         = get(g:, 'zeef_matchseq',       false    )
+export var popupmaxheight: number       = get(g:, 'zeef_popupmaxheight', 100      )
+export var prompt:         string       = get(g:, 'zeef_prompt',         ' ❯ '    )
+export var sidescroll:     number       = get(g:, 'zeef_sidescroll',     5        )
+export var skipfirst:      number       = get(g:, 'zeef_skipfirst',      0        )
+export var stlname:        string       = get(g:, 'zeef_stlname',        'Zeef'   )
+export var wildchar:       string       = get(g:, 'zeef_wildchar',       ' '      )
+export var winheight:      number       = get(g:, 'zeef_winheight',      10       )
+export var winhighlight:   string       = get(g:, 'zeef_winhighlight',   ''       )
 # }}}
 # Internal State {{{
 var sBufnr:                  number       = -1     # Zeef buffer number
@@ -60,6 +46,22 @@ var sUndoStack:  list<bool> = []
 
 # Commands to restore the window layout when Zeef's window is closed
 var sWinRestCmd: string = ''
+
+class Config
+  static var Fuzzy          = () => fuzzy
+  static var KeyAliases     = () => keyaliases
+  static var KeyMap         = () => keymap
+  static var Limit          = () => limit
+  static var MatchSeq       = () => matchseq
+  static var PopupMaxHeight = () => popupmaxheight
+  static var Prompt         = () => sLabel .. ' ' .. (sFuzzy ? fuzzySymbol : exactSymbol) .. prompt
+  static var SideScroll     = () => sidescroll
+  static var SkipFirst      = () => skipfirst
+  static var StatusLineName = () => stlname
+  static var Wildchar       = () => wildchar
+  static var WinHeight      = () => winheight
+  static var WinHighlight   = () => winhighlight
+endclass
 # }}}
 # Helper Functions {{{
 def In(v: string, items: list<string>): bool
@@ -118,7 +120,8 @@ def EchoPrompt()
   redrawstatus
   redraw
   echo "\r"
-  echo sLabel .. Config.Prompt() .. sInput
+  echo Config.Prompt() .. sInput
+
 enddef
 
 def EchoResult(items: list<string>)
@@ -175,6 +178,20 @@ def MatchFuzzily()
     endfor
     ++i
   endwhile
+enddef
+
+def Match()
+  var old_seq = get(undotree(), 'seq_cur', 0)
+
+  if sFuzzy
+    MatchFuzzily()
+  else
+    MatchExactly()
+  endif
+
+  var new_seq = get(undotree(), 'seq_cur', 0)
+
+  add(sUndoStack, new_seq != old_seq) # new_seq != old_seq iff the buffer has changed
 enddef
 
 def! g:ZeefStatusLine(): string
@@ -430,8 +447,8 @@ enddef
 
 def ActionToggleFuzzy()
   sFuzzy = !sFuzzy
-  ActionClearPrompt()
   clearmatches()
+  ActionClearPrompt()
 enddef
 
 def ActionToggleItem()
@@ -537,17 +554,7 @@ def ProcessKeyPress(key: string)
   sInput ..= key
 
   if strchars(sInput) > Config.SkipFirst()
-    var old_seq = get(undotree(), 'seq_cur', 0)
-
-    if sFuzzy
-      MatchFuzzily()
-    else
-      MatchExactly()
-    endif
-
-    var new_seq = get(undotree(), 'seq_cur', 0)
-
-    add(sUndoStack, new_seq != old_seq) # new_seq != old_seq iff the buffer has changed
+    Match()
   endif
 enddef
 
@@ -678,16 +685,15 @@ def SetColorscheme(items: list<string>)
 enddef
 
 export def ColorschemeSwitcher()
-    var searchPaths = [
-      globpath(&runtimepath, 'colors/*.vim', 0, 1),
-      globpath(&packpath, 'pack/*/{opt,start}/*/colors/*.vim', 0, 1),
-    ]
-    var colorschemes = []
+  var searchPaths = [
+    globpath(&runtimepath, 'colors/*.vim', 0, 1),
+    globpath(&packpath, 'pack/*/{opt,start}/*/colors/*.vim', 0, 1),
+  ]
+  var colorschemes = []
 
-    for pathList in searchPaths
-      colorschemes += map(pathList, (_, p): string => fnamemodify(p, ':t:r'))
-    endfor
-  endif
+  for pathList in searchPaths
+    colorschemes += map(pathList, (_, p): string => fnamemodify(p, ':t:r'))
+  endfor
 
   Open(colorschemes, SetColorscheme, 'Choose colorscheme', {multi: false})
 enddef
