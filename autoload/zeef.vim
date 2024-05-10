@@ -123,7 +123,6 @@ def EchoPrompt()
   redraw
   echo "\r"
   echo Config.Prompt() .. sInput
-
 enddef
 
 def EchoResult(items: list<string>)
