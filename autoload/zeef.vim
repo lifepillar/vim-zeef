@@ -65,6 +65,14 @@ class Config
   static var WinHighlight   = () => winhighlight
 endclass
 # }}}
+# Highlight Groups {{{
+hi default link ZeefMatch Label
+hi default link ZeefName StatusLine
+hi default link ZeefPopupWinColor Normal
+hi default link ZeefPopupBorderColor Identifier
+hi default link ZeefPopupScrollbarColor PmenuSbar
+hi default link ZeefPopupScrollbarThumbColor PmenuThumb
+# }}}
 # Helper Functions {{{
 def In(v: string, items: list<string>): bool
   return index(items, v) != -1
@@ -207,9 +215,6 @@ def OpenZeefBuffer(items: list<string>): number
     &wincolor = Config.WinHighlight()
   endif
 
-  hi default link ZeefMatch Label
-  hi default link ZeefName StatusLine
-
   prop_type_add('zeefmatch', {bufnr: bufnr(), 'highlight': 'ZeefMatch'})
 
   abclear <buffer>
@@ -294,11 +299,6 @@ def RemoveFromSelectionPopup(winid: number, key: string): bool
 enddef
 
 def CreateSelectionPopup()
-  hi default link ZeefPopupWinColor Normal
-  hi default link ZeefPopupBorderColor Identifier
-  hi default link ZeefPopupScrollbarColor PmenuSbar
-  hi default link ZeefPopupScrollbarThumbColor PmenuThumb
-
   sPopupId = popup_create(sResult, {
     border: [1, 1, 1, 1],
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
