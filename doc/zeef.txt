@@ -80,6 +80,24 @@ See |zeef-functions| for a description of each zeef.
 While these provide useful functionality out of the box, Zeef encourages you
 to define your own zeefs that fit exactly your needs.
 
+If you want to define a command or a mapping for a zeef in your |vimrc|, you
+may do it as follows:
+>
+	import autoload 'zeef.vim'
+
+	# Define a command to browse recent files
+	command! -nargs=0 OldFiles zeef.Args(v:oldfiles)
+
+	# Define a mapping for the same purpose
+	nnoremap <c-n> <scriptcmd>zeef.Args(v:oldfiles)<cr>
+<
+Note: before Vim 9.1.0403, you may have to create a symbolic link in your
+Vim's autoload directory for the autoload import to work. For instance:
+>
+	mkdir -p ~/.vim/autoload
+	cd ~/.vim/autoload
+	ln -s ../pack/plugins/start/zeef/autoload/zeef.vim zeef.vim
+<
 ==============================================================================
 2. Functions					*zeef-functions*
 

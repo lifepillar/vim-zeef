@@ -97,4 +97,23 @@ To choose a color scheme:
 :call zeef#ColorschemeSwitcher()
 ```
 
-Zeef is fully documented: see `:help zeef.txt` for the details.
+If you want to define a command or a mapping for a zeef in your `vimrc` and
+your `vimrc` is written in Vim 9 script, you may proceed it as follows:
+
+    vim9script
+    import autoload 'zeef.vim'
+
+    # Define a command to browse recent files
+    command! -nargs=0 OldFiles zeef.Args(v:oldfiles)
+
+    # Define a mapping for the same purpose
+    nnoremap <c-n> <scriptcmd>zeef.Args(v:oldfiles)<cr>
+
+**Note:** before Vim 9.1.0403, you may have to create a symbolic link in your
+Vim's autoload directory for the autoload import to work. For instance:
+
+    mkdir -p ~/.vim/autoload
+    cd ~/.vim/autoload
+    ln -s ../pack/plugins/start/zeef/autoload/zeef.vim zeef.vim
+
+Finally, Zeef is fully documented: see `:help zeef.txt` for the details.
