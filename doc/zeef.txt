@@ -260,12 +260,12 @@ For each global setting of the form `g:zeef_<setting>`, Zeef exports a script
 variable called `<setting>` with the same meaning. For example, to use exact
 pattern matching when the Zeef buffer is opened, set |g:zeef_fuzzy| or
 |zeef.fuzzy| to |false|. The latter is recommended because it does not pollute
-the globals space and settings may be changed on the fly and take effect the
-next time Zeef is open. Changes to global variables are applied only if they
+the global space, and settings may be changed on the fly and take effect the
+next time Zeef is opened. Changes to global variables are applied only if they
 are done before the Zeef script is loaded.
 
 Note: from the command line you may have to use a slightly different syntax.
-For example, to use exact pattern matching on opening:
+For example, to open Zeef with exact pattern matching, use:
 >
 	:let zeef#fuzzy = 0
 <
@@ -356,6 +356,14 @@ Note that the height is limited by the number of screen lines in any case.
 The string to be used for the command line prompt:
 >
 	zeef.prompt = ' ❯ ' 
+<
+						*'zeef.reuselastmode'*
+						*'g:zeef_reuselastmode'*
+Set to |true| to reopen Zeef in the last (exact or fuzzy) mode in which it was
+closed. The default is to always open Zeef in the mode determined by
+|zeef.fuzzy|.
+>
+	zeef.reuselastmode = false
 <
 						*'zeef.sidescroll'*
 						*'g:zeef_sidescroll'*

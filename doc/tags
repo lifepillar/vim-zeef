@@ -7,6 +7,7 @@
 'g:zeef_matchseq'	zeef.txt	/*'g:zeef_matchseq'*
 'g:zeef_popupmaxheight'	zeef.txt	/*'g:zeef_popupmaxheight'*
 'g:zeef_prompt'	zeef.txt	/*'g:zeef_prompt'*
+'g:zeef_reuselastmode'	zeef.txt	/*'g:zeef_reuselastmode'*
 'g:zeef_sidescroll'	zeef.txt	/*'g:zeef_sidescroll'*
 'g:zeef_skipfirst'	zeef.txt	/*'g:zeef_skipfirst'*
 'g:zeef_stlname'	zeef.txt	/*'g:zeef_stlname'*
@@ -21,6 +22,7 @@
 'zeef.matchseq'	zeef.txt	/*'zeef.matchseq'*
 'zeef.popupmaxheight'	zeef.txt	/*'zeef.popupmaxheight'*
 'zeef.prompt'	zeef.txt	/*'zeef.prompt'*
+'zeef.reuselastmode'	zeef.txt	/*'zeef.reuselastmode'*
 'zeef.sidescroll'	zeef.txt	/*'zeef.sidescroll'*
 'zeef.skipfirst'	zeef.txt	/*'zeef.skipfirst'*
 'zeef.winheight'	zeef.txt	/*'zeef.winheight'*

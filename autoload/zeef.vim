@@ -16,6 +16,7 @@ export var limit:          number       = get(g:, 'zeef_limit',          0      
 export var matchseq:       bool         = get(g:, 'zeef_matchseq',       false    )
 export var popupmaxheight: number       = get(g:, 'zeef_popupmaxheight', 100      )
 export var prompt:         string       = get(g:, 'zeef_prompt',         ' ❯ '    )
+export var reuselastmode:  bool         = get(g:, 'zeef_reuselastmode',  false    )
 export var sidescroll:     number       = get(g:, 'zeef_sidescroll',     5        )
 export var skipfirst:      number       = get(g:, 'zeef_skipfirst',      0        )
 export var stlname:        string       = get(g:, 'zeef_stlname',        'Zeef'   )
@@ -55,6 +56,7 @@ class Config
   static var MatchSeq       = () => matchseq
   static var PopupMaxHeight = () => popupmaxheight
   static var Prompt         = () => sLabel .. ' ' .. (sFuzzy ? fuzzysymbol : exactsymbol) .. prompt
+  static var ReuseLastMode  = () => reuselastmode
   static var SideScroll     = () => sidescroll
   static var SkipFirst      = () => skipfirst
   static var StatusLineName = () => stlname
@@ -594,6 +596,10 @@ export def Open(
 
   if !empty(sResult)
     Callback(sResult)
+  endif
+
+  if Config.ReuseLastMode()
+    fuzzy = sFuzzy
   endif
 
   sInput = ''
