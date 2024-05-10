@@ -29,10 +29,10 @@ open:
 - CTRL-J or down arrow: move down one line.
 - left and right arrows: scroll horizontally.
 - CTRL-B, CTRL-F, CTRL-D, CTRL-U, CTRL-E, CTRL-Y: usual movements.
-- Backspace delete one character fromt the prompt.
+- Backspace: deletes one character from the prompt.
 - CTRL-L: clear the prompt.
-- Tab selects the current item.
-- Shift-Tab deselects the current item.
+- Tab: selects the current item.
+- Shift-Tab: deselects the current item.
 - CTRL-X: toggles the selection of the current item.
 - CTRL-G: deselects all items.
 - CTRL-A: selects all currently filtered lines.
@@ -58,9 +58,11 @@ Any of the previous mappings can be overridden: see `:help zeef-customization`.
 How does Zeef differ from the several similar plugins already out there, you
 ask? The implementation is likely *the simplest possible*: as you type, Zeef
 uses `matchfuzzypos()` to filter the displayed items according to the fuzzy
-matches. When you press backspace, `:undo` is used to restore the previous
-state. The core of this plugin is just that. It works surprisingly well, unless
-your list is very large (hundreds of thousands of lines).
+matches; if the exact mode is enabled, `:g!` is used instead to filter out the
+lines that do not match the current input. When you press backspace, `:undo` is
+used to restore the previous state. The core of this plugin is just that. It
+works surprisingly well, unless your list is very large (hundreds of thousands
+of lines).
 
 What can you do with Zeef? Whatever you want! Zeef is not bloated with features
 that you will never use: it is for people who wish to implement their own
