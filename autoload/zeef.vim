@@ -327,7 +327,7 @@ def CreateSelectionPopup()
     scrollbar: true,
     scrollbarhighlight: 'ZeefPopupScrollbarColor',
     thumbhighlight: 'ZeefPopupScrollbarThumbColor',
-    title: 'Selected Items',
+    title: sMultipleSelection ? 'Selected Items' : 'Selected Item',
     wrap: false,
   })
 enddef
