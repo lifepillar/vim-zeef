@@ -1,6 +1,6 @@
 # Zeef
 
-Zeef is a pure autoload interactive fuzzy filter for a list of items,
+Zeef is a pure autoload interactive exact and fuzzy filter for a list of items,
 entirely written in Vim 9 script. Zeef requires Vim 9.1 or later, built with
 `+popupwin` and `+textprop`.
 
@@ -12,7 +12,8 @@ Remarkable features:
 - mouse support.
 
 Zeef does not define any command or mapping: that is left as a task for the
-user. It is used by invoking `zeef.Open()`:
+user (an example is at the end of this document). It is used by invoking
+`zeef.Open()`:
 
     :call zeef#Open(['January', 'July', 'Julian', 'adjective', 'every'])
 
@@ -66,8 +67,7 @@ of lines).
 
 What can you do with Zeef? Whatever you want! Zeef is not bloated with features
 that you will never use: it is for people who wish to implement their own
-functionality with minimal help. That said, Zeef does come with a few “sample
-applications” or “zeefs”:
+functionality with minimal help. That said, Zeef does come with a few “zeefs”:
 
 - a buffer switcher;
 - a path filter;

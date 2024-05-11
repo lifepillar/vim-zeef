@@ -1,4 +1,4 @@
-*zeef.txt*	For Vim version 9.1	Last change: 2024 May 5
+*zeef.txt*	For Vim version 9.1	Last change: 2024 May 11
 
 			______          ________                         ~
 			___  /_____________  __/                         ~
@@ -19,12 +19,13 @@ CONTENTS				*zeef-contents*
 ==============================================================================
 1. Introduction				*zeef-introduction*
 
-Zeef is a pure autoload interactive fuzzy filter for a |List| of items,
-entirely written in Vim 9 script. Zeef requires Vim 9.1 or later, built with
-|+popupwin| and |+textprop|.
+Zeef is a pure autoload interactive exact and fuzzy filter for a |List| of
+items, entirely written in Vim 9 script. Zeef requires Vim 9.1 or later, built
+with |+popupwin| and |+textprop|. Vim 9.1.403 or later is recommended.
 
 Zeef does not define any command or mapping: that is left as a task for the
-user. It is used by invoking |zeef.Open()|:
+user (an example is at the end of this section). It is used by invoking
+|zeef.Open()|:
 >
 	:call zeef#Open(['January', 'July', 'Julian', 'adjective', 'every'])
 <
@@ -34,27 +35,37 @@ selected items. Press <enter> to invoke a callback with the selected item(s),
 or with the item under the cursor if nothing was selected. Press <esc> to
 cancel. The default callback just echoes the selected items.
 
-The following is the complete list of special keys you can use when Zeef is
-open.
+By default, fuzzy matching is used: see |matchfuzzy()| for details, and
+|zeef.limit| and |zeef.matchseq| for configuration. It is possible to switch
+to exact matching at any time by pressing <c-z> (CTRL-Z): then, the input acts
+mostly as a globbing pattern where each character is matched literally except
+for `^`, `$`, and <space>: the former two anchor the match to the start or the
+end of a line, respectively, while <space> acts as a wildchar matching zero or
+more characters. You may change the wildchar with |zeef.wildchar|.
 
-- <c-k> or <up>: moves up one line.
-- <c-j> or <down>: moves down one line.
-- <left> and <right>: scrolls horizontally.
-- <c-b>, <c-f>, <c-d>, <c-u>, <c-e>, <c-y>: usual movements.
-- <bs>: deletes one character from the prompt.
-- <c-l>: clears the prompt.
-- <tab>: selects the current item.
-- <s-tab>: deselects the current item.
-- <c-x>: toggles the selection of the current item.
-- <c-g>: deselects all items.
-- <c-a>: selects all currently filtered items.
-- <c-r>: deselects all currently filtered items.
-- <c-p>: toggles the display of the selected items popup.
-- <c-z>: toggles between exact and fuzzy matching.
-- <esc>, <c-c>: closes Zeef without performing any action.
-- <enter>: accepts the current choice.
-- <c-s>, <c-v>, <c-t>: same as <enter>, but also open a horizontal split,
-  vertical split or tab window, respectively.
+The following is the complete list of special keys you can use when Zeef is
+open:
+
+- <c-k> (CTRL-K) or <up> (up arrow): moves up one line.
+- <c-j> (CTRL-J) or <down> (down arrow): moves down one line.
+- <left> (left arrow) and <right> (right arrow): scrolls horizontally.
+- <c-b> (CTRL-B), <c-f> (CTRL-F): usual Vim window movements.
+- <c-d> (CTRL-D), <c-u> (CTRL-U): usual Vim window movements.
+- <c-e> (CTRL-E), <c-y> (CTRL-Y): usual Vim line movements.
+- <bs> (backspace): deletes one character from the prompt.
+- <c-l> (CTRL-L): clears the prompt.
+- <tab> (Tab): selects the current item.
+- <s-tab> (Shift-Tab): deselects the current item.
+- <c-x> (CTRL-X): toggles the selection of the current item.
+- <c-g> (CTRL-G): deselects all items.
+- <c-a> (CTRL-A): selects all currently filtered items.
+- <c-r> (CTRL-R): deselects all currently filtered items.
+- <c-p> (CTRL-P): toggles the display of the selected items popup.
+- <c-z> (CTRL-Z): toggles between exact and fuzzy matching.
+- <esc> (Esc), <c-c> (CTRL-C): closes Zeef without performing any action.
+- <enter> (Enter): accepts the current choice.
+- <c-s> (CTRL-S), <c-v> (CTRL-V), <c-t> (CTRL-T): same as <enter>, but also
+  open a horizontal split, vertical split or tab window, respectively.
 
 Zeef supports using the mouse: you may select and deselect by clicking on an
 item, and you may use the mouse to scroll both vertically and horizontally.
@@ -77,8 +88,9 @@ Zeef comes with a few simple predefined "zeefs":
 
 See |zeef-functions| for a description of each zeef.
 
-While these provide useful functionality out of the box, Zeef encourages you
-to define your own zeefs that fit exactly your needs.
+While those provide useful functionality out of the box, Zeef encourages you
+to define your own zeefs that fit exactly your needs. Refer to the source code
+to see how that can be done: it is not complicated!
 
 If you want to define a command or a mapping for a zeef in your |vimrc|, you
 may do it as follows:
@@ -110,7 +122,7 @@ Open({items}, [{func}, {label}, {opts}])	*zeef.Open()*
 		a |List| of |String|s and does not return anything. The
 		function is invoked when the user accepts the prompt by
 		pressing <enter> or equivalent key. The function is not
-		invoked if the user cancels the operation with <esc> or <c-c>.
+		invoked if the user cancels the operation with Esc or CTRL-C.
 
 		The {label} is a |String| shown in the command-line before
 		the cursor. It should be short and informative about the
@@ -126,7 +138,7 @@ Open({items}, [{func}, {label}, {opts}])	*zeef.Open()*
 		  selected entries are kept unique.
 		- `dupdelete`: when |true|, removing an item from the selected
 		  items deletes all the copies of that item. By default,
-		  only the first copy is deleted. Of course, if `dupInsert` is
+		  only the first copy is deleted. Of course, if `dupinsert` is
 		  set to |false|, the value of `dupdelete` is irrelevant.
 		- `keyaliases`: this is a dictionary like |zeef.keyaliases|, but
 		  only for the current Zeef buffer.
@@ -258,11 +270,11 @@ a matter of taste.
 
 For each global setting of the form `g:zeef_<setting>`, Zeef exports a script
 variable called `<setting>` with the same meaning. For example, to use exact
-pattern matching when the Zeef buffer is opened, set |g:zeef_fuzzy| or
-|zeef.fuzzy| to |false|. The latter is recommended because it does not pollute
-the global space, and settings may be changed on the fly and take effect the
-next time Zeef is opened. Changes to global variables are applied only if they
-are done before the Zeef script is loaded.
+pattern matching when the Zeef buffer is initially opened, set |g:zeef_fuzzy|
+or |zeef.fuzzy| to |false|. The latter is recommended because it does not
+pollute the global space, and settings may be changed on the fly and take
+effect the next time Zeef is opened. Changes to global variables are applied
+only if they are done before the Zeef script is loaded.
 
 Note: from the command line you may have to use a slightly different syntax.
 For example, to open Zeef with exact pattern matching, use:
@@ -309,7 +321,8 @@ Then, you may define:
 	  "\<c-h>": "\<left>",
 	}
 <
-The target keys must be those defined in |zeef-introduction|.
+The target keys (the dictionary values) must be those defined in
+|zeef-introduction|.
 
 						*'zeef.keymap'*
 						*'g:zeef_keymap'*
@@ -323,8 +336,26 @@ with |zeef.SelectedItems()|.
 The following is a silly example, hijacking the functionality of <enter>:
 >
 	zeef.keymap = {"\<enter>": () => {
-	  smile
+	  popup_dialog(split(execute('smile'), "\n"), {time: 10})
 	}}
+<
+As another example, the following sets CTRL-W to change Zeef's window color to
+the currently selected item:
+>
+	vim9script
+	import autoload "zeef.vim"
+
+	var keymap = {"\<c-w>": () => {
+	  var highlight = zeef.SelectedItems()
+	
+	  if len(highlight) > 0
+	    &wincolor = highlight[0]
+	  endif
+	}}
+	
+	zeef.Open(['Search', 'Identifier', 'Normal'], 
+	  v:none, v:none, {keymap: keymap, multi: false}
+	)
 <
 Note: key mappings may be overridden for the duration of a single zeef, too:
 see |zeef.Open()|.
