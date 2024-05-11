@@ -144,7 +144,7 @@ def EchoPrompt()
 enddef
 
 def EchoResult(items: list<string>)
-  echo sResult
+  echo items
 enddef
 
 # Default regexp filter for exact matching.
