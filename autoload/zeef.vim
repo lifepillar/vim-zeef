@@ -7,22 +7,24 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # User Configuration {{{
-export var exactsymbol:    string       = get(g:, 'zeef_exactsymbol',    '[Exact]')
-export var fuzzy:          bool         = get(g:, 'zeef_fuzzy',          true     )
-export var fuzzysymbol:    string       = get(g:, 'zeef_fuzzysymbol',    '[Fuzzy]')
-export var keyaliases:     dict<string> = get(g:, 'zeef_keyaliases',     {}       )
-export var keymap:         dict<func()> = get(g:, 'zeef_keymap',         {}       )
-export var limit:          number       = get(g:, 'zeef_limit',          0        )
-export var matchseq:       bool         = get(g:, 'zeef_matchseq',       false    )
-export var popupmaxheight: number       = get(g:, 'zeef_popupmaxheight', 100      )
-export var prompt:         string       = get(g:, 'zeef_prompt',         ' ❯ '    )
-export var reuselastmode:  bool         = get(g:, 'zeef_reuselastmode',  false    )
-export var sidescroll:     number       = get(g:, 'zeef_sidescroll',     5        )
-export var skipfirst:      number       = get(g:, 'zeef_skipfirst',      0        )
-export var stlname:        string       = get(g:, 'zeef_stlname',        'Zeef'   )
-export var wildchar:       string       = get(g:, 'zeef_wildchar',       ' '      )
-export var winheight:      number       = get(g:, 'zeef_winheight',      10       )
-export var winhighlight:   string       = get(g:, 'zeef_winhighlight',   ''       )
+export var exactlabel:       string       = get(g:, 'zeef_exactlabel',       '[Exact]'                               )
+export var fuzzy:            bool         = get(g:, 'zeef_fuzzy',            true                                    )
+export var fuzzylabel:       string       = get(g:, 'zeef_fuzzylabel',       '[Fuzzy]'                               )
+export var keyaliases:       dict<string> = get(g:, 'zeef_keyaliases',       {}                                      )
+export var keymap:           dict<func()> = get(g:, 'zeef_keymap',           {}                                      )
+export var limit:            number       = get(g:, 'zeef_limit',            0                                       )
+export var matchseq:         bool         = get(g:, 'zeef_matchseq',         false                                   )
+export var popupborder:      list<number> = get(g:, 'zeef_popupborder',      [1, 1, 1, 0]                            )
+export var popupborderchars: list<string> = get(g:, 'zeef_popupborderchars', ['─', ' ', '─', ' ', ' ', ' ', ' ', ' '])
+export var popupmaxheight:   number       = get(g:, 'zeef_popupmaxheight',   100                                     )
+export var prompt:           string       = get(g:, 'zeef_prompt',           ' ❯ '                                   )
+export var reuselastmode:    bool         = get(g:, 'zeef_reuselastmode',    false                                   )
+export var sidescroll:       number       = get(g:, 'zeef_sidescroll',       5                                       )
+export var skipfirst:        number       = get(g:, 'zeef_skipfirst',        0                                       )
+export var stlname:          string       = get(g:, 'zeef_stlname',          'Zeef'                                  )
+export var wildchar:         string       = get(g:, 'zeef_wildchar',         ' '                                     )
+export var winheight:        number       = get(g:, 'zeef_winheight',        10                                      )
+export var winhighlight:     string       = get(g:, 'zeef_winhighlight',     ''                                      )
 # }}}
 # Internal State {{{
 var sBufnr:                  number       = -1     # Zeef buffer number
@@ -49,20 +51,22 @@ var sUndoStack:  list<bool> = []
 var sWinRestCmd: string = ''
 
 class Config
-  static var Fuzzy          = () => fuzzy
-  static var KeyAliases     = () => keyaliases
-  static var KeyMap         = () => keymap
-  static var Limit          = () => limit
-  static var MatchSeq       = () => matchseq
-  static var PopupMaxHeight = () => popupmaxheight
-  static var Prompt         = () => sLabel .. ' ' .. (sFuzzy ? fuzzysymbol : exactsymbol) .. prompt
-  static var ReuseLastMode  = () => reuselastmode
-  static var SideScroll     = () => sidescroll
-  static var SkipFirst      = () => skipfirst
-  static var StatusLineName = () => stlname
-  static var Wildchar       = () => wildchar
-  static var WinHeight      = () => winheight
-  static var WinHighlight   = () => winhighlight
+  static var Fuzzy            = () => fuzzy
+  static var KeyAliases       = () => keyaliases
+  static var KeyMap           = () => keymap
+  static var Limit            = () => limit
+  static var MatchSeq         = () => matchseq
+  static var PopupBorder      = () => popupborder
+  static var PopupBorderChars = () => popupborderchars
+  static var PopupMaxHeight   = () => popupmaxheight
+  static var Prompt           = () => sLabel .. ' ' .. (sFuzzy ? fuzzylabel : exactlabel) .. prompt
+  static var ReuseLastMode    = () => reuselastmode
+  static var SideScroll       = () => sidescroll
+  static var SkipFirst        = () => skipfirst
+  static var StatusLineName   = () => stlname
+  static var Wildchar         = () => wildchar
+  static var WinHeight        = () => winheight
+  static var WinHighlight     = () => winhighlight
 endclass
 # }}}
 # Highlight Groups {{{
@@ -299,29 +303,31 @@ def RemoveFromSelectionPopup(winid: number, key: string): bool
 enddef
 
 def CreateSelectionPopup()
+  var border = Config.PopupBorder()
+
   sPopupId = popup_create(sResult, {
-    border: [1, 1, 1, 1],
-    borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+    border: border,
+    borderchars: Config.PopupBorderChars(),
     borderhighlight: ['ZeefPopupBorderColor'],
     callback: SelectionPopupClosed,
-    close: 'button',
-    col: 1,
+    close: 'none',
+    col: 0,
     cursorline: false,
     drag: false,
     filter: RemoveFromSelectionPopup,
     highlight: 'ZeefPopupWinColor',
     line: screenpos(bufwinid(sBufnr), 1, 1).row - 1,
-    minheight: 1,
     maxheight: Min(Config.PopupMaxHeight(), &lines - Config.WinHeight() - 10),
-    padding: [0, 1, 0, 1],
+    maxwidth: &columns - border[1] - border[3],
+    minheight: 1,
+    minwidth: &columns - border[1] - border[3],
+    padding: [0, 0, 0, 0],
     pos: 'botleft',
     resize: false,
     scrollbar: true,
     scrollbarhighlight: 'ZeefPopupScrollbarColor',
     thumbhighlight: 'ZeefPopupScrollbarThumbColor',
     title: 'Selected Items',
-    minwidth: &columns - 5,
-    maxwidth: &columns - 5,
     wrap: false,
   })
 enddef
