@@ -388,12 +388,10 @@ enddef
 def ActionLeftClick()
   var mousepos = getmousepos()
 
-  if mousepos.winid != bufwinid(sBufnr)
-    return
+  if mousepos.winid == bufwinid(sBufnr)
+    ToggleItem(getbufoneline(sBufnr, mousepos.line))
+    UpdateSelectionPopupStatus()
   endif
-
-  ToggleItem(getbufoneline(sBufnr, mousepos.line))
-  UpdateSelectionPopupStatus()
 enddef
 
 def ActionMoveUp()
