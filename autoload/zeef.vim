@@ -121,11 +121,18 @@ def RemoveFromSelection(item: string)
   endif
 enddef
 
-def ToggleItem(item: string)
-  if item->NotIn(sResult)
-    AddToSelection(item)
+def ToggleItem(lnum: number)
+  var item = getbufoneline(sBufnr, lnum)
+  var itemExists = item->In(sResult)
+
+  if itemExists
+      RemoveFromSelection(item)
   else
-    RemoveFromSelection(item)
+    if !sMultipleSelection
+      sResult = []
+    endif
+
+    AddToSelection(item)
   endif
 enddef
 
@@ -389,7 +396,7 @@ def ActionLeftClick()
   var mousepos = getmousepos()
 
   if mousepos.winid == bufwinid(sBufnr)
-    ToggleItem(getbufoneline(sBufnr, mousepos.line))
+    ToggleItem(mousepos.line)
     UpdateSelectionPopupStatus()
   endif
 enddef
@@ -451,15 +458,7 @@ def ActionToggleFuzzy()
 enddef
 
 def ActionToggleItem()
-  var item = getbufoneline(sBufnr, line('.'))
-
-  if !sMultipleSelection && len(sResult) > 0 && item->NotIn(sResult)
-    sResult = []
-    AddToSelection(item)
-  else
-    ToggleItem(item)
-  endif
-
+  ToggleItem(line('.'))
   UpdateSelectionPopupStatus()
 enddef
 
