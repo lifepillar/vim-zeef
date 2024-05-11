@@ -454,10 +454,12 @@ def ActionToggleItem()
   var item = getbufoneline(sBufnr, line('.'))
 
   if !sMultipleSelection && len(sResult) > 0 && item->NotIn(sResult)
-    return
+    sResult = []
+    AddToSelection(item)
+  else
+    ToggleItem(item)
   endif
 
-  ToggleItem(item)
   UpdateSelectionPopupStatus()
 enddef
 
