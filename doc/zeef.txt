@@ -30,7 +30,7 @@ user (an example is at the end of this section). It is used by invoking
 	:call zeef#Open(['January', 'July', 'Julian', 'adjective', 'every'])
 <
 Start typing to filter the list. Press <tab> to select an item: that will
-automatically open the "selected items" popup, which displays the currently
+automatically open the "Selected Items" popup, which displays the currently
 selected items. Press <enter> to invoke a callback with the selected item(s),
 or with the item under the cursor if nothing was selected. Press <esc> to
 cancel. The default callback just echoes the selected items.
@@ -60,7 +60,7 @@ open:
 - <c-g> (CTRL-G): deselects all items.
 - <c-a> (CTRL-A): selects all currently filtered items.
 - <c-r> (CTRL-R): deselects all currently filtered items.
-- <c-p> (CTRL-P): toggles the display of the selected items popup.
+- <c-p> (CTRL-P): toggles the display of the Selected Items popup.
 - <c-z> (CTRL-Z): toggles between exact and fuzzy matching.
 - <esc> (Esc), <c-c> (CTRL-C): closes Zeef without performing any action.
 - <enter> (Enter): accepts the current choice.
@@ -72,7 +72,7 @@ item, and you may use the mouse to scroll both vertically and horizontally.
 These are the supported mouse events:
 
 - <LeftMouse>: in the Zeef buffer, selects or deselects an item; in the
-  selected items popup, removes an item from the list of selected items.
+  Selected Items popup, removes an item from the list of selected items.
 - <ScrollWheelUp>, <ScrollWheelDown>: vertical scrolling.
 - <ScrollWheelLeft>, <ScrollWheelRight>: horizontal scrolling.
 
@@ -259,7 +259,7 @@ Zeef defines the following highlight groups, which you may redefine in your
 
 - `ZeefMatch`: used for highlighting the matching characters.
 - `ZeefName`: used for highlighting the name of the buffer in the status line.
-- `ZeefPopupWinColor`: the color of the selected items popup.
+- `ZeefPopupWinColor`: the color of the Selected Items popup.
 - `ZeefPopupBorderColor`: the color of the border of the popup.
 - `ZeefPopupScrollbarColor` : the color of scrollbar of the popup.
 - `ZeefPopupScrollbarThumbColor`: the color of the scrollbar thumb.
@@ -283,11 +283,11 @@ For example, to open Zeef with exact pattern matching, use:
 <
 Prepend `let`, use `#` instead of `.` and `0/1` instead of `false/true`.
 
-						*'zeef.exactsymbol'*
-						*'g:zeef_exactsymbol'*
+						*'zeef.exactlabel'*
+						*'g:zeef_exactlabel'*
 The string to be used in the prompt to indicate that exact matching is active.
 >
-	zeef.exactsymbol = "[Exact]"
+	zeef.exactlabel = "[Exact]"
 <
 						*'zeef.fuzzy'*
 						*'g:zeef_fuzzy'*
@@ -297,11 +297,11 @@ search at any time while the Zeef buffer is open.
 >
 	zeef.fuzzy = true
 <
-						*'zeef.fuzzysymbol'*
-						*'g:zeef_fuzzysymbol'*
+						*'zeef.fuzzylabel'*
+						*'g:zeef_fuzzylabel'*
 The string to be used in the prompt to indicate that fuzzy matching is active.
 >
-	zeef.fuzzysymbol = "[Fuzzy]"
+	zeef.fuzzylabel = "[Fuzzy]"
 <
 						*'zeef.keyaliases'*
 						*'g:zeef_keyaliases'*
@@ -374,9 +374,20 @@ in the user input in the order in which they have been typed. See
 >
 	zeef.matchseq = false 
 <
+						*'zeef.popupborder'*
+						*'g:zeef_popupborder'*
+Border thickness of the Selected Items popup. See |popup_create-arguments|.
+>
+	zeef.popupborder = [1, 1, 1, 0]
+<						*'zeef.popupborderchars'*
+						*'g:zeef_popupborderchars'*
+Characters defining the Selected Items popup border. See |popup_create-arguments|.
+>
+	zeef.popupborderchars = ['─', ' ', '─', ' ', ' ', ' ', ' ', ' ']
+<
 						*'zeef.popupmaxheight'*
 						*'g:zeef_popupmaxheight'*
-The maximum height of the selected items popup.
+The maximum height of the Selected Items popup.
 >
 	zeef.popupmaxheight = 100 
 <
