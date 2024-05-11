@@ -54,8 +54,7 @@ class Config
   static var Fuzzy            = () => fuzzy
   static var KeyAliases       = () => keyaliases
   static var KeyMap           = () => keymap
-  static var Limit            = () => limit
-  static var MatchSeq         = () => matchseq
+  static var MatchFuzzyOpts   = () => matchseq ? {limit: limit, matchseq: matchseq} : {limit: limit}
   static var PopupBorder      = () => popupborder
   static var PopupBorderChars = () => popupborderchars
   static var PopupMaxHeight   = () => popupmaxheight
@@ -169,13 +168,7 @@ def MatchExactly()
 enddef
 
 def MatchFuzzily()
-  var opts: dict<any> = {'limit': Config.Limit()}
-
-  if Config.MatchSeq()
-    opts['matchseq'] = true
-  endif
-
-  var [lines, charpos, _] = matchfuzzypos(getbufline(sBufnr, 1, line('$')), sInput, opts)
+  var [lines, charpos, _] = matchfuzzypos(getbufline(sBufnr, 1, line('$')), sInput, Config.MatchFuzzyOpts())
 
   deletebufline(sBufnr, 1, '$')
   setbufline(sBufnr, 1, lines)
