@@ -323,7 +323,6 @@ def CreateSelectionPopup()
     minwidth: &columns - 5,
     maxwidth: &columns - 5,
     wrap: false,
-    zindex: 32000,
   })
 enddef
 
