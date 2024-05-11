@@ -383,6 +383,7 @@ enddef
 def ActionDeselectItem()
   RemoveFromSelection(getbufoneline(sBufnr, line('.')))
   UpdateSelectionPopupStatus()
+  normal k
 enddef
 
 def ActionLeftClick()
@@ -427,12 +428,13 @@ def ActionSelectCurrent()
 enddef
 
 def ActionSelectItem()
-  if !sMultipleSelection && len(sResult) > 0
-    return
+  if !sMultipleSelection
+    sResult = []
   endif
 
   AddToSelection(getbufoneline(sBufnr, line('.')))
   UpdateSelectionPopupStatus()
+  normal j
 enddef
 
 def ActionSplitAccept()
