@@ -309,7 +309,7 @@ def CreateSelectionPopup()
     cursorline: false,
     drag: false,
     filter: RemoveFromSelectionPopup,
-    highlight: 'ZeefPopupBorderColor',
+    highlight: 'ZeefPopupWinColor',
     line: screenpos(bufwinid(sBufnr), 1, 1).row - 1,
     minheight: 1,
     maxheight: Min(Config.PopupMaxHeight(), &lines - Config.WinHeight() - 10),
