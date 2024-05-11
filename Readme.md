@@ -45,14 +45,15 @@ open:
 - CTRL-S, CTRL-V, CTRL-T: same as Enter, but also open a horizonal split,
   vertical split or tab window, respectively.
 
-Zeef supports using the mouse: you may select and deselect by clicking on an
-item, and you may use the mouse to scroll both vertically and horizontally.
-These are the supported mouse events:
+Zeef supports using the mouse (see `:help 'mouse'`): you may select and
+deselect by clicking on an item, and you may use the mouse to scroll both
+vertically and horizontally. These are the supported mouse events:
 
 - `<LeftMouse>`: in the Zeef buffer, selects or deselects an item; in the
   selected items popup, removes an item from the list of selected items.
 - `<ScrollWheelUp>`, `<ScrollWheelDown>`: vertical scrolling.
-- `<ScrollWheelLeft>`, `<ScrollWheelRight>`: horizontal scrolling.
+- `<ScrollWheelLeft>`, `<ScrollWheelRight>`: horizontal scrolling in the Zeef
+  buffer.
 
 Any of the previous mappings can be overridden: see `:help zeef-customization`.
 
