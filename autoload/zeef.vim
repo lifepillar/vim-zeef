@@ -704,7 +704,9 @@ export def ColorschemeSwitcher()
     colorschemes += map(pathList, (_, p): string => fnamemodify(p, ':t:r'))
   endfor
 
-  Open(colorschemes, SetColorscheme, 'Choose colorscheme', {multi: false})
+  uniq(sort(colorschemes))
+
+  Open(colorschemes, SetColorscheme, 'Choose colorscheme', extend(options, {multi: false}, 'keep'))
 enddef
 # }}}
 # Buffer Tags Using Ctags {{{
