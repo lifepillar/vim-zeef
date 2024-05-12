@@ -150,22 +150,24 @@ Open({items}, [{func}, {label}, {opts}])	*zeef.Open()*
 		  for the current Zeef buffer. Takes precedence on
 		  |zeef.keymap| for matching keys.
 
-Args({paths})					*zeef.Args()*
+Args({paths}[, {opts}])				*zeef.Args()*
 		Interactively filter a list of paths and populate the arglist
 		with the selected items. For example:
 >
 		:call zeef#Args(v:oldfiles)
 <
-		See also |zeef.Files()|.
+		For {opts}, see |zeef.Open()|. See also |zeef.Files()|.
 
-BufferSwitcher([{props}])			*zeef.BufferSwitcher()*
+BufferSwitcher([{props}, {opts}])		*zeef.BufferSwitcher()*
 		Open a buffer switcher. By default, unlisted buffers are not
 		shown: to include unlisted buffers, use the {props} argument
 		set to {unlisted: true}.
 >
  		:call zeef#BufferSwitcher({'unlisted': 1})
 <
-BufferTags([{types}, {bin}])			*zeef.BufferTags()*
+		For {opts}, see |zeef.Open()|. 
+
+BufferTags([{types}, {bin}, {opts}])		*zeef.BufferTags()*
 		Interactively filter the tags in the current buffer and jumps
 		to the selected tag. Requires |ctags|. {types} is
 		a |Dictionary| mapping Ctags types to Vim filetypes. {bin} is
@@ -174,12 +176,16 @@ BufferTags([{types}, {bin}])			*zeef.BufferTags()*
 >
 		:call zeef#BufferTags()
 <
-ColorschemeSwitcher()				*zeef.ColorschemeSwitcher()*
+		For {opts}, see |zeef.Open()|. 
+
+ColorschemeSwitcher([{opts}])			*zeef.ColorschemeSwitcher()*
 		Select a color scheme.
 >
 		:call zeef#ColorschemeSwitcher()
 <
-Files([{dir}])					*zeef.Files()*
+		For {opts}, see |zeef.Open()|. 
+
+Files([{dir}, {opts}])				*zeef.Files()*
 		Interactively filter the list of paths inside a given
 		directory and populate the arglist with the selected items. If
 		{dir} is not provided, the current working directory is used:
@@ -188,7 +194,7 @@ Files([{dir}])					*zeef.Files()*
 >
 		:call zeef#Files('~/.vim')
 <
-		See also |zeef.Args()|.
+		For {opts}, see |zeef.Open()|. See also |zeef.Args()|.
 
 LastKeyPressed()				*zeef.LastKeyPressed()*
 		The most recently pressed key. This may be used in the
@@ -234,7 +240,7 @@ LastKeyPressed()				*zeef.LastKeyPressed()*
 		  }
 		)
 <
-LocationList([{nr}, {func}])			*zeef.LocationList()*
+LocationList([{nr}, {func}, {opts}])		*zeef.LocationList()*
 		Interactively filter the lines from a location list and
 		execute {func} on the selected items. For {nr}, see
 		|getloclist()|. If {nr} is not specified, the location list of
@@ -244,7 +250,9 @@ LocationList([{nr}, {func}])			*zeef.LocationList()*
 >
 		:call zeef#LocationList()
 <
-QuickfixList([{func}])				*zeef.QuickfixList()*
+		For {opts}, see |zeef.Open()|. 
+
+QuickfixList([{func}, {opts}])			*zeef.QuickfixList()*
 		Interactively filter the lines from the quickfix list and
 		execute {func} on the selected items. If {func} is not
 		provided, the default behaviour is to jump to the first
@@ -252,6 +260,8 @@ QuickfixList([{func}])				*zeef.QuickfixList()*
 >
 		:call zeef#QuickfixList()
 <
+		For {opts}, see |zeef.Open()|. 
+
 SelectedItems()					*zeef.SelectedItems()*
 		Return the currently selected items. This is mainly useful in
 		functions used with |zeef.keymap|.
