@@ -158,10 +158,6 @@ def Regexp(input: string): string
 enddef
 
 def MatchExactly()
-  if empty(sInput)
-    return
-  endif
-
   var regexp = Regexp(sInput)
 
   try
