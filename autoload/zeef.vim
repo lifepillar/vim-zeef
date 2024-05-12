@@ -179,6 +179,7 @@ def MatchFuzzily()
   var [lines, charpos, _] = matchfuzzypos(getbufline(sBufnr, 1, line('$')), sInput, Config.MatchFuzzyOpts())
 
   deletebufline(sBufnr, 1, '$')
+  undojoin
   setbufline(sBufnr, 1, lines)
 
   # Highlight matches
