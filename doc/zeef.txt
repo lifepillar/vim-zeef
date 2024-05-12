@@ -134,6 +134,8 @@ Open({items}, [{func}, {label}, {opts}])	*zeef.Open()*
 
 		- `multi`: set to |true| to allow multiple selections (the
 		  default); set to |false| for single selection.
+		- `skipfirst`: the number of characters to type before
+		  starting to filter. Overrides |zeef.skipfirst|.
 		- `dupinsert`: when |true|, multiple identical items may be
 		  added to the list of selected items. By default, 
 		  selected entries are kept unique.
@@ -142,9 +144,11 @@ Open({items}, [{func}, {label}, {opts}])	*zeef.Open()*
 		  only the first copy is deleted. Of course, if `dupinsert` is
 		  set to |false|, the value of `dupdelete` is irrelevant.
 		- `keyaliases`: this is a dictionary like |zeef.keyaliases|, but
-		  only for the current Zeef buffer.
+		  only for the current Zeef buffer. Takes precedence on
+		  |zeef.keyaliases| for matching keys.
 		- `keymap`: this is a dictionary like |zeef.keymap|, but only
-		  for the current Zeef buffer.
+		  for the current Zeef buffer. Takes precedence on
+		  |zeef.keymap| for matching keys.
 
 Args({paths})					*zeef.Args()*
 		Interactively filter a list of paths and populate the arglist
@@ -418,7 +422,7 @@ keys.
 						*'zeef.skipfirst'*
 						*'g:zeef_skipfirst'*
 Do not start filtering until at least this number of characters has been
-typed.
+typed. This may help with very large lists.
 >
 	zeef.skipfirst = 0
 <

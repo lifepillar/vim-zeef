@@ -37,6 +37,7 @@ var sKeyMap:                 dict<func()> = {}     # The current key map (key pr
 var sKeyPress:               string       = ''     # Last key press (after aliasing is resolved)
 var sPopupId:                number       = -1     # ID of the Selected Items popup
 var sResult:                 list<string> = []     # The currently selected items
+var sSkipFirst:              number       = 0      # How many characters to type before starting to filter
 # The following are set when opening Zeef
 var sLabel:                  string       = 'Zeef' # Prompt label
 var sMultipleSelection:      bool         = true   # Whether muliple selections are allowed
@@ -470,10 +471,12 @@ def ActionUndo()
     normal gg
   endif
 
-  clearmatches()
+  if !sFuzzy
+    clearmatches()
 
-  if !empty(sInput)
-    matchadd('ZeefMatch', '\c' .. Regexp(sInput))
+    if strchars(sInput) > sSkipFirst
+      matchadd('ZeefMatch', '\c' .. Regexp(sInput))
+    endif
   endif
 enddef
 
@@ -553,7 +556,7 @@ def ProcessKeyPress(key: string)
 
   sInput ..= key
 
-  if strchars(sInput) > Config.SkipFirst()
+  if strchars(sInput) > sSkipFirst
     Match()
   endif
 enddef
@@ -578,6 +581,7 @@ export def Open(
     options:                dict<any>          = {},
     )
   sLabel              = promptLabel
+  sSkipFirst          = get(options, 'skipfirst', Config.SkipFirst())
   sMultipleSelection  = get(options, 'multi', true)
   sDuplicateInsertion = get(options, 'dupinsert', false) && sMultipleSelection
   sDuplicateDeletion  = get(options, 'dupdelete', false) && sDuplicateInsertion
