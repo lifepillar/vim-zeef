@@ -625,16 +625,16 @@ def SetArglist(items: list<string>)
 enddef
 
 # Filter a list of paths and populate the arglist with the selected items.
-export def Args(paths: list<string>)
-  Open(paths, SetArglist, 'Choose files')
+export def Args(paths: list<string>, options: dict<any> = {})
+  Open(paths, SetArglist, 'Choose files', options)
 enddef
 
 # Ditto, but use the paths in the specified directory
-export def Files(directory = '.')
+export def Files(directory = '.', options: dict<any> = {})
   var dir = shellescape(fnamemodify(directory, ':p'))
   var cmd = executable('rg') ? $"rg --files {dir}" : $"find {dir} -type f"
 
-  Open(systemlist(cmd), SetArglist, 'Choose files')
+  Open(systemlist(cmd), SetArglist, 'Choose files', options)
 enddef
 # }}}
 # Buffer Switcher {{{
@@ -644,13 +644,13 @@ enddef
 
 # props is a dictionary with the following keys:
 #   - unlisted: when set to true, show also unlisted buffers
-export def BufferSwitcher(props: dict<any> = {})
+export def BufferSwitcher(props: dict<any> = {}, options: dict<any> = {})
   var showUnlisted = get(props, 'unlisted', false)
   var cmd = 'ls' .. (showUnlisted ? '!' : '')
   var buffers = split(execute(cmd), "\n")
   map(buffers, (_, b): string => substitute(b, '"\(.*\)"\s*line\s*\d\+$', '\1', ''))
 
-  Open(buffers, SwitchToBuffer, 'Switch buffer', {multi: false})
+  Open(buffers, SwitchToBuffer, 'Switch buffer', extend(options, {multi: false}, 'keep'))
 enddef
 # }}}
 # Quickfix/Location List Filter {{{
@@ -662,7 +662,7 @@ def JumpToLocationListEntry(items: list<string>)
   execute 'lrewind' matchstr(items[0], '^\s*\d\+')
 enddef
 
-export def QuickfixList(Callback = JumpToQuickfixEntry)
+export def QuickfixList(Callback = JumpToQuickfixEntry, options: dict<any> = {})
   var qflist = getqflist()
 
   if empty(qflist)
@@ -672,10 +672,10 @@ export def QuickfixList(Callback = JumpToQuickfixEntry)
 
   var cmd = split(execute('clist'), "\n")
 
-  Open(cmd, Callback, 'Filter quickfix entry')
+  Open(cmd, Callback, 'Filter quickfix entry', options)
 enddef
 
-export def LocationList(winnr = 0, Callback = JumpToLocationListEntry)
+export def LocationList(winnr = 0, Callback = JumpToLocationListEntry, options: dict<any> = {})
   var loclist = getloclist(winnr)
 
   if empty(loclist)
@@ -685,7 +685,7 @@ export def LocationList(winnr = 0, Callback = JumpToLocationListEntry)
 
   var cmd = split(execute('llist'), "\n")
 
-  Open(cmd, Callback, 'Filter loclist entry')
+  Open(cmd, Callback, 'Filter loclist entry', options)
 enddef
 # }}}
 # Find Color Scheme {{{
@@ -693,7 +693,7 @@ def SetColorscheme(items: list<string>)
   execute 'colorscheme' items[0]
 enddef
 
-export def ColorschemeSwitcher()
+export def ColorschemeSwitcher(options: dict<any> = {})
   var searchPaths = [
     globpath(&runtimepath, 'colors/*.vim', 0, 1),
     globpath(&packpath, 'pack/*/{opt,start}/*/colors/*.vim', 0, 1),
@@ -744,13 +744,13 @@ def JumpToTag(item: string, bufname: string)
   endif
 enddef
 
-export def BufferTags(ctagsTypes: dict<string> = {}, ctagsPath = sCtagsBin)
+export def BufferTags(ctagsTypes: dict<string> = {}, ctagsPath = sCtagsBin, options: dict<any> = {})
   var bufname = bufname("%")
   var tags = Tags(bufname, &ft, ctagsPath, extend(ctagsTypes, sCtagsTypes, 'keep'))
 
   map(tags, (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', ''))
 
-  Open(tags, (t: list<string>) => JumpToTag(t[0], bufname), 'Choose tag', {multi: false})
+  Open(tags, (t: list<string>) => JumpToTag(t[0], bufname), 'Choose tag', extend(options, {multi: false}, 'keep'))
 enddef
 # }}}
 # }}}
