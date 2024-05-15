@@ -638,10 +638,8 @@ def SwitchToBuffer(items: list<string>)
   execute 'buffer' matchstr(items[0], '^\s*\zs\d\+')
 enddef
 
-# props is a dictionary with the following keys:
-#   - unlisted: when set to true, show also unlisted buffers
-export def BufferSwitcher(props: dict<any> = {}, options: dict<any> = {})
-  var showUnlisted = get(props, 'unlisted', false)
+export def BufferSwitcher(options: dict<any> = {})
+  var showUnlisted = get(options, 'unlisted', false)
   var cmd = 'ls' .. (showUnlisted ? '!' : '')
   var buffers = split(execute(cmd), "\n")
   map(buffers, (_, b): string => substitute(b, '"\(.*\)"\s*line\s*\d\+$', '\1', ''))
@@ -740,8 +738,10 @@ def JumpToTag(item: string, bufname: string)
   endif
 enddef
 
-export def BufferTags(ctagsTypes: dict<string> = {}, ctagsPath = sCtagsBin, options: dict<any> = {})
+export def BufferTags(options: dict<any> = {})
   var bufname = bufname("%")
+  var ctagsPath = get(options, 'bin', sCtagsBin)
+  var ctagsTypes = get(options, 'types', {})
   var tags = Tags(bufname, &ft, ctagsPath, extend(ctagsTypes, sCtagsTypes, 'keep'))
 
   map(tags, (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', ''))

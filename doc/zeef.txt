@@ -158,26 +158,25 @@ Args({paths}[, {opts}])				*zeef.Args()*
 <
 		For {opts}, see |zeef.Open()|. See also |zeef.Files()|.
 
-BufferSwitcher([{props}, {opts}])		*zeef.BufferSwitcher()*
-		Open a buffer switcher. By default, unlisted buffers are not
-		shown: to include unlisted buffers, use the {props} argument
-		set to {unlisted: true}.
+BufferSwitcher([{opts}])			*zeef.BufferSwitcher()*
+		Open a buffer switcher. {opts} is as in |zeef.Open| except
+		that an additional `unlisted` key is supported: when set to
+		|true|, unlisted buffers are shown, too.
 >
  		:call zeef#BufferSwitcher({'unlisted': 1})
 <
-		For {opts}, see |zeef.Open()|. 
-
-BufferTags([{types}, {bin}, {opts}])		*zeef.BufferTags()*
+BufferTags([{opts}])				*zeef.BufferTags()*
 		Interactively filter the tags in the current buffer and jumps
-		to the selected tag. Requires |ctags|. {types} is
-		a |Dictionary| mapping Ctags types to Vim filetypes. {bin} is
-		the path of the Ctags executable, if the executable is not in
-		$PATH.
+		to the selected tag. Requires |ctags|. {opts} is as in
+		|zeef.Open| except that the following additional entries are
+		allowed:
+
+		- `types`: a |Dict| mapping Ctags types to Vim filetypes.
+		- `bin`: the path of the Ctags executable, if the executable
+		  is not in $PATH.
 >
 		:call zeef#BufferTags()
 <
-		For {opts}, see |zeef.Open()|. 
-
 ColorschemeSwitcher([{opts}])			*zeef.ColorschemeSwitcher()*
 		Select a color scheme.
 >
