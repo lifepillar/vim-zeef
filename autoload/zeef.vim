@@ -82,10 +82,6 @@ def In(v: string, items: list<string>): bool
   return index(items, v) != -1
 enddef
 
-def NotIn(v: string, items: list<string>): bool
-  return index(items, v) == -1
-enddef
-
 def Min(m: number, n: number): number
   return m < n ? m : n
 enddef
