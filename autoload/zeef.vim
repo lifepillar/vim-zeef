@@ -221,6 +221,7 @@ def OpenZeefBuffer(items: list<string>): number
         \ buftype=nofile
         \ colorcolumn&
         \ cursorline
+        \ cursorlineopt=line
         \ filetype=zeef
         \ foldmethod=manual
         \ modifiable
@@ -352,7 +353,7 @@ def ActionAccept()
   sFinish = true
 enddef
 
-def ActionCancel()
+export def ActionCancel()
   sResult = []
   CloseSelectionPopup()
   CloseZeefBuffer()
