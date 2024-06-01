@@ -608,16 +608,16 @@ export def Open(
 
   EventLoop()
 
-  if !empty(sResult)
-    Callback(sResult)
-  endif
-
   if Config.ReuseLastMode()
     fuzzy = sFuzzy
   endif
 
   sInput = ''
   sResult = []
+
+  if !empty(sResult)
+    Callback(sResult)
+  endif
 enddef
 
 export def LastKeyPressed(): string
