@@ -8,9 +8,9 @@ endif
 # }}}
 # User Configuration {{{
 export var andchar:          string       = get(g:, 'zeef_andchar',          '&'                                     )
-export var exactlabel:       string       = get(g:, 'zeef_exactlabel',       '[Exact]'                               )
+export var exactlabel:       string       = get(g:, 'zeef_exactlabel',       ' [Exact]'                              )
 export var fuzzy:            bool         = get(g:, 'zeef_fuzzy',            true                                    )
-export var fuzzylabel:       string       = get(g:, 'zeef_fuzzylabel',       '[Fuzzy]'                               )
+export var fuzzylabel:       string       = get(g:, 'zeef_fuzzylabel',       ' [Fuzzy]'                              )
 export var keyaliases:       dict<string> = get(g:, 'zeef_keyaliases',       {}                                      )
 export var keymap:           dict<func()> = get(g:, 'zeef_keymap',           {}                                      )
 export var limit:            number       = get(g:, 'zeef_limit',            0                                       )
@@ -66,7 +66,7 @@ class Config
   static var PopupBorder      = () => popupborder
   static var PopupBorderChars = () => popupborderchars
   static var PopupMaxHeight   = () => popupmaxheight
-  static var Prompt           = () => sLabel .. ' ' .. (sFuzzy ? fuzzylabel : exactlabel) .. prompt
+  static var Prompt           = () => sLabel .. (sFuzzy ? fuzzylabel : exactlabel) .. prompt
   static var ReuseLastMode    = () => reuselastmode
   static var SideScroll       = () => sidescroll
   static var SkipFirst        = () => skipfirst

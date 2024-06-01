@@ -328,7 +328,7 @@ match `&` literally.
 						*'g:zeef_exactlabel'*
 The string to be used in the prompt to indicate that exact matching is active.
 >
-	zeef.exactlabel = "[Exact]"
+	zeef.exactlabel = " [Exact]"
 <
 						*'zeef.fuzzy'*
 						*'g:zeef_fuzzy'*
@@ -342,7 +342,7 @@ search at any time while the Zeef buffer is open.
 						*'g:zeef_fuzzylabel'*
 The string to be used in the prompt to indicate that fuzzy matching is active.
 >
-	zeef.fuzzylabel = "[Fuzzy]"
+	zeef.fuzzylabel = " [Fuzzy]"
 <
 						*'zeef.keyaliases'*
 						*'g:zeef_keyaliases'*
