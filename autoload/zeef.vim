@@ -626,7 +626,13 @@ export def LastKeyPressed(): string
 enddef
 
 export def SelectedItems(): list<string>
-  return sResult
+  if empty(sResult)
+    return getbufline(sBufnr, line('.'))
+  else
+    return sResult
+  endif
+enddef
+
 enddef
 # }}}}
 # Zeefs {{{
