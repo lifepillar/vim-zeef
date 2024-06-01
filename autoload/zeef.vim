@@ -613,11 +613,12 @@ export def Open(
   endif
 
   sInput = ''
-  sResult = []
 
   if !empty(sResult)
     Callback(sResult)
   endif
+
+  sResult = []
 enddef
 
 export def LastKeyPressed(): string
