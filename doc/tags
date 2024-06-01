@@ -41,7 +41,10 @@ zeef-introduction	zeef.txt	/*zeef-introduction*
 zeef.Args()	zeef.txt	/*zeef.Args()*
 zeef.BufferSwitcher()	zeef.txt	/*zeef.BufferSwitcher()*
 zeef.BufferTags()	zeef.txt	/*zeef.BufferTags()*
+zeef.ClearPrompt()	zeef.txt	/*zeef.ClearPrompt()*
 zeef.ColorschemeSwitcher()	zeef.txt	/*zeef.ColorschemeSwitcher()*
+zeef.DeselectAll()	zeef.txt	/*zeef.DeselectAll()*
+zeef.Dismiss()	zeef.txt	/*zeef.Dismiss()*
 zeef.Files()	zeef.txt	/*zeef.Files()*
 zeef.LastKeyPressed()	zeef.txt	/*zeef.LastKeyPressed()*
 zeef.LocationList()	zeef.txt	/*zeef.LocationList()*

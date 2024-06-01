@@ -633,6 +633,16 @@ export def SelectedItems(): list<string>
   endif
 enddef
 
+export def ClearPrompt()
+  ActionClearPrompt()
+enddef
+
+export def DeselectAll()
+  ActionDeselectAll()
+enddef
+
+export def Dismiss()
+  ActionCancel()
 enddef
 # }}}}
 # Zeefs {{{

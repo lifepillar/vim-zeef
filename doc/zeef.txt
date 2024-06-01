@@ -183,12 +183,24 @@ BufferTags([{opts}])				*zeef.BufferTags()*
 >
 		:call zeef#BufferTags()
 <
+ClearPrompt()					*zeef.ClearPrompt()*
+		Clear the prompt. This is mainly useful in functions used with
+		|zeef.keymap|.
+
 ColorschemeSwitcher([{opts}])			*zeef.ColorschemeSwitcher()*
 		Select a color scheme.
 >
 		:call zeef#ColorschemeSwitcher()
 <
 		For {opts}, see |zeef.Open()|. 
+
+DeselectAll()					*zeef.DeselectAll()*
+		Clear the current selection. This is mainly useful in
+		functions used with |zeef.keymap|.
+
+Dismiss()					*zeef.Dismiss()*
+		Close Zeef. No callback is invoked. This is mainly useful in
+		functions used with |zeef.keymap|.
 
 Files([{dir}, {opts}])				*zeef.Files()*
 		Interactively filter the list of paths inside a given
@@ -356,35 +368,54 @@ The target keys (the dictionary values) must be those defined in
 						*'zeef.keymap'*
 						*'g:zeef_keymap'*
 A |Dictionary| that maps keys to arbitrary functions. Such functions should
-take no arguments and return no value. Inside such functions, you may get the
-last key press with |zeef.LastKeyPressed()| and the currently selected items
-with |zeef.SelectedItems()|.
+take no arguments and return no value.
 >
 	zeef.keymap: dict<func()> = {}
 <
+You may use a keymap to perform arbitrary actions on the currently selected
+items, with or without dismissing the Zeef buffer. 
+
 The following is a silly example, hijacking the functionality of <enter>:
 >
 	zeef.keymap = {"\<enter>": () => {
 	  popup_dialog(split(execute('smile'), "\n"), {time: 10})
 	}}
 <
-As another example, the following sets CTRL-W to change Zeef's window color to
-the currently selected item:
+In the following example, CTRL-D is set to delete the selected items while
+Zeef stays open:
 >
 	vim9script
-	import autoload "zeef.vim"
-
-	var keymap = {"\<c-w>": () => {
-	  var highlight = zeef.SelectedItems()
+	import autoload 'zeef.vim'
 	
-	  if len(highlight) > 0
-	    &wincolor = highlight[0]
-	  endif
-	}}
+	def Callback(items: list<string>)
+	  echo items
+	enddef
 	
-	zeef.Open(['Search', 'Identifier', 'Normal'], 
-	  v:none, v:none, {keymap: keymap, multi: false}
-	)
+	def Delete(items: list<string>)
+	  for item in items
+	    var name = matchstr(item, '"\zs[^"]\+\ze"')
+	    
+	    if !empty(name)
+	      echowindow $'bdelete {name}'
+	      # bdelete name # Uncomment to really delete
+	    endif
+	  endfor
+	
+	  zeef.DeselectAll()
+	enddef
+	
+	zeef.keymap = {
+	  "\<c-d>": () => {
+	    Delete(zeef.SelectedItems())
+	  }
+	}
+	
+	def Buffers()
+	  var buffers = split(execute('ls'), "\n")
+	  zeef.Open(buffers, Callback, 'Choose')
+	enddef
+	
+	Buffers()
 <
 Note: key mappings may be overridden for the duration of a single zeef, too:
 see |zeef.Open()|.
