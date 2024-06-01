@@ -27,6 +27,8 @@ export var winheight:        number       = get(g:, 'zeef_winheight',        10 
 export var winhighlight:     string       = get(g:, 'zeef_winhighlight',     ''                                      )
 # }}}
 # Internal State {{{
+const kEscapeChars = '~.\[:*' # Special characters that must be escaped when exact matching is used
+
 var sBufnr:                  number       = -1     # Zeef buffer number
 var sFinish:                 bool         = false  # The event loop is exited when this becomes true
 var sFuzzy:                  bool         = true   # Use fuzzy matching?
@@ -39,10 +41,12 @@ var sPopupId:                number       = -1     # ID of the Selected Items po
 var sResult:                 list<string> = []     # The currently selected items
 var sSkipFirst:              number       = 0      # How many characters to type before starting to filter
 # The following are set when opening Zeef
+var sDuplicateDeletion:      bool         = true   # Whether all duplicates should be removed when one is removed
+var sDuplicateInsertion:     bool         = false  # Whether duplicate items in the result are allowed
+var sEscapeChars:            string       = ''     # Characters to escape when using exact matching
 var sLabel:                  string       = 'Zeef' # Prompt label
 var sMultipleSelection:      bool         = true   # Whether muliple selections are allowed
-var sDuplicateInsertion:     bool         = false  # Whether duplicate items in the result are allowed
-var sDuplicateDeletion:      bool         = true   # Whether all duplicates should be removed when one is removed
+var sWildChar:               string       = ''     # (Escaped) character interpreted as .* in exact matching
 
 # Stack of booleans that tells whether to undo when pressing backspace.
 # If the top of the stack is true then undo; if it is false, do not undo.
@@ -52,6 +56,7 @@ var sUndoStack:  list<bool> = []
 var sWinRestCmd: string = ''
 
 class Config
+  static var EscapeChars      = () => substitute(kEscapeChars, escape(wildchar, kEscapeChars), '', 'g')
   static var Fuzzy            = () => fuzzy
   static var KeyAliases       = () => keyaliases
   static var KeyMap           = () => keymap
@@ -64,7 +69,7 @@ class Config
   static var SideScroll       = () => sidescroll
   static var SkipFirst        = () => skipfirst
   static var StatusLineName   = () => stlname
-  static var Wildchar         = () => wildchar
+  static var WildChar         = () => escape(wildchar, kEscapeChars)
   static var WinHeight        = () => winheight
   static var WinHighlight     = () => winhighlight
 endclass
@@ -150,7 +155,7 @@ enddef
 # a pattern. All characters are matched literally except ^, $, and the
 # wildchar; the latter matches zero 0 more characters.
 def Regexp(input: string): string
-  return substitute(escape(input, '~.\[:'), Config.Wildchar(), '.*', 'g')
+  return substitute(escape(input, sEscapeChars), sWildChar, '.*', 'g')
 enddef
 
 def MatchExactly()
@@ -579,6 +584,8 @@ export def Open(
   sMultipleSelection  = get(options, 'multi', true)
   sDuplicateInsertion = get(options, 'dupinsert', false) && sMultipleSelection
   sDuplicateDeletion  = get(options, 'dupdelete', false) && sDuplicateInsertion
+  sEscapeChars        = Config.EscapeChars()
+  sWildChar           = Config.WildChar()
   sKeyMap             = extend(extend(get(options, 'keymap', {}), Config.KeyMap(), 'keep'), cDefaultKeyMap, 'keep')
   sKeyAliases         = extend(get(options, 'keyaliases', {}), Config.KeyAliases(), 'keep')
   sWinRestCmd         = winrestcmd()
