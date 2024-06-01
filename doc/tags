@@ -1,3 +1,4 @@
+'g:zeef_andchar'	zeef.txt	/*'g:zeef_andchar'*
 'g:zeef_exactlabel'	zeef.txt	/*'g:zeef_exactlabel'*
 'g:zeef_fuzzy'	zeef.txt	/*'g:zeef_fuzzy'*
 'g:zeef_fuzzylabel'	zeef.txt	/*'g:zeef_fuzzylabel'*
@@ -15,6 +16,7 @@
 'g:zeef_stlname'	zeef.txt	/*'g:zeef_stlname'*
 'g:zeef_winheight'	zeef.txt	/*'g:zeef_winheight'*
 'g:zeef_winhighlight'	zeef.txt	/*'g:zeef_winhighlight'*
+'zeef.andchar'	zeef.txt	/*'zeef.andchar'*
 'zeef.exactlabel'	zeef.txt	/*'zeef.exactlabel'*
 'zeef.fuzzy'	zeef.txt	/*'zeef.fuzzy'*
 'zeef.fuzzylabel'	zeef.txt	/*'zeef.fuzzylabel'*

@@ -7,6 +7,7 @@ if !has('popupwin') || !has('textprop') || v:version < 901
 endif
 # }}}
 # User Configuration {{{
+export var andchar:          string       = get(g:, 'zeef_andchar',          '&'                                     )
 export var exactlabel:       string       = get(g:, 'zeef_exactlabel',       '[Exact]'                               )
 export var fuzzy:            bool         = get(g:, 'zeef_fuzzy',            true                                    )
 export var fuzzylabel:       string       = get(g:, 'zeef_fuzzylabel',       '[Fuzzy]'                               )
@@ -56,6 +57,7 @@ var sUndoStack:  list<bool> = []
 var sWinRestCmd: string = ''
 
 class Config
+  static var AndChar          = () => andchar
   static var EscapeChars      = () => substitute(kEscapeChars, escape(wildchar, kEscapeChars), '', 'g')
   static var Fuzzy            = () => fuzzy
   static var KeyAliases       = () => keyaliases
@@ -159,17 +161,22 @@ def Regexp(input: string): string
 enddef
 
 def MatchExactly()
-  var regexp = Regexp(sInput)
+  clearmatches()
 
-  try
-    execute 'silent keeppatterns g!:\m' .. regexp .. ':norm "_dd'
-  catch /^Vim\%((\a\+)\)\=:E538:/  # Raised when all lines match
-  endtry
+  var inputs = split(sInput, Config.AndChar())
+
+  for input in inputs
+    var regexp = Regexp(input)
+
+    try
+      execute 'silent keeppatterns g!:\m' .. regexp .. ':norm "_dd'
+    catch /^Vim\%((\a\+)\)\=:E538:/  # Raised when all lines match
+    endtry
+
+    matchadd('ZeefMatch', '\c' .. regexp)
+  endfor
 
   normal gg
-
-  clearmatches()
-  matchadd('ZeefMatch', '\c' .. regexp)
 enddef
 
 def MatchFuzzily()
@@ -366,6 +373,7 @@ export def ActionCancel()
 enddef
 
 def ActionClearPrompt()
+  clearmatches()
   silent undo 1
   sUndoStack = []
   sInput = ''
@@ -474,7 +482,11 @@ def ActionUndo()
     clearmatches()
 
     if strchars(sInput) > sSkipFirst
-      matchadd('ZeefMatch', '\c' .. Regexp(sInput))
+      var inputs = split(sInput, Config.AndChar())
+
+      for input in inputs
+        matchadd('ZeefMatch', '\c' .. Regexp(input))
+      endfor
     endif
   endif
 enddef

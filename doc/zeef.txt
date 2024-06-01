@@ -1,4 +1,4 @@
-*zeef.txt*	For Vim version 9.1	Last change: 2024 May 11
+*zeef.txt*	For Vim version 9.1	Last change: 2024 Jun 01
 
 			______          ________                         ~
 			___  /_____________  __/                         ~
@@ -39,9 +39,15 @@ By default, fuzzy matching is used: see |matchfuzzy()| for details, and
 |zeef.limit| and |zeef.matchseq| for configuration. It is possible to switch
 to exact matching at any time by pressing <c-z> (CTRL-Z): then, the input acts
 mostly as a globbing pattern where each character is matched literally except
-for `^`, `$`, and <space>: the former two anchor the match to the start or the
-end of a line, respectively, while <space> acts as a wildchar matching zero or
-more characters. You may change the wildchar with |zeef.wildchar|.
+for <space>, ^, $, and &:
+
+- <space> acts as a wildchar matching zero or more characters. You may change
+  the wildchar with |zeef.wildchar|;
+- ^ anchors the match at the start of a line;
+- $ anchors the match at the end of a line;
+- & combines patterns: for example, the input `vim&doc` keeps lines that match
+  both `vim` and `doc` (in any order). This character can be customized with
+  |zeef.andchar|.
 
 The following is the complete list of special keys you can use when Zeef is
 open:
@@ -296,6 +302,15 @@ For example, to open Zeef with exact pattern matching, use:
 	:let zeef#fuzzy = 0
 <
 Prepend `let`, use `#` instead of `.` and `0/1` instead of `false/true`.
+
+						*'zeef.andchar'*
+						*'g:zeef_andchar'*
+The character used to combine patterns when exact matching is used.
+>
+	zeef.andchar = "&"
+<
+You may set |zeef.andchar| to the empty string to suppress this feature and
+match `&` literally.
 
 						*'zeef.exactlabel'*
 						*'g:zeef_exactlabel'*
