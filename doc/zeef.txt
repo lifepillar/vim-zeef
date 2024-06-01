@@ -393,7 +393,7 @@ see |zeef.Open()|.
 The maximum number of fuzzy matches to display. Zero means no limit. See also
 |matchfuzzy()|.
 >
-	zeef.limit = 100 
+	zeef.limit = 0 
 <
 						*'zeef.matchseq'*
 						*'g:zeef_matchseq'*
