@@ -461,7 +461,6 @@ enddef
 
 def ActionToggleFuzzy()
   sFuzzy = !sFuzzy
-  clearmatches()
   ActionClearPrompt()
 enddef
 
