@@ -57,7 +57,7 @@ var sUndoStack:  list<bool> = []
 var sWinRestCmd: string = ''
 
 class Config
-  static var AndChar          = () => andchar
+  static var AndChar          = () => escape(andchar, kEscapeChars)
   static var EscapeChars      = () => substitute(kEscapeChars, escape(wildchar, kEscapeChars), '', 'g')
   static var Fuzzy            = () => fuzzy
   static var KeyAliases       = () => keyaliases
