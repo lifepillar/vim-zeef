@@ -165,11 +165,18 @@ Args({paths}[, {opts}])				*zeef.Args()*
 		For {opts}, see |zeef.Open()|. See also |zeef.Files()|.
 
 BufferSwitcher([{opts}])			*zeef.BufferSwitcher()*
-		Open a buffer switcher. {opts} is as in |zeef.Open| except
-		that an additional `unlisted` key is supported: when set to
-		|true|, unlisted buffers are shown, too.
+		Open a buffer switcher. {opts} is as in |zeef.Open|, but the
+		following keys are also supported:
+			buflisted	include only listed buffers.
+			bufloaded	include only loaded buffers.
+			bufmodified	include only modified buffers.
+			fullpath	also display the full path.
+		
+		The first three are as in |getbufinfo()|. For example:
 >
- 		:call zeef#BufferSwitcher({'unlisted': 1})
+		:call zeef#BufferSwitcher({
+		  buflisted: true, fullpath: true
+		})
 <
 BufferTags([{opts}])				*zeef.BufferTags()*
 		Interactively filter the tags in the current buffer and jumps

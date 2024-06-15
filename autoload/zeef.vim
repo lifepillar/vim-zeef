@@ -667,17 +667,32 @@ enddef
 # }}}
 # Buffer Switcher {{{
 def SwitchToBuffer(items: list<string>)
-  execute 'buffer' matchstr(items[0], '^\s*\zs\d\+')
+  execute 'buffer' matchstr(items[0], '^\s*\d\+')
 enddef
 
 export def BufferSwitcher(options: dict<any> = {})
-  var showUnlisted = get(options, 'unlisted', false)
-  var cmd = 'ls' .. (showUnlisted ? '!' : '')
-  var buffers = split(execute(cmd), "\n")
-  map(buffers, (_, b): string => substitute(b, '"\(.*\)"\s*line\s*\d\+$', '\1', ''))
+  var buffers: list<string> = []
 
-  Open(buffers, SwitchToBuffer, 'Switch buffer', extend(options, {multi: false}, 'keep'))
+  for info in getbufinfo(options)
+    var nr = printf('%4d', info.bufnr)
+    var name = fnamemodify(info.name, ":t")
+
+    if empty(name)
+      name = '[No Name]'
+    endif
+
+    var line = $'{nr} {name}'
+
+    if get(options, 'fullpath', false)
+      line ..= $'   {info.name}'
+    endif
+
+    buffers->add(line)
+  endfor
+
+  Open(buffers, SwitchToBuffer, 'Choose buffer', {multi: false})
 enddef
+
 # }}}
 # Quickfix/Location List Filter {{{
 def JumpToQuickfixEntry(items: list<string>)
