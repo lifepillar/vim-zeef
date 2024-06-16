@@ -162,7 +162,11 @@ Args({paths}[, {opts}])				*zeef.Args()*
 >
 		:call zeef#Args(v:oldfiles)
 <
-		For {opts}, see |zeef.Open()|. See also |zeef.Files()|.
+		{opts} is the same as in |zeef.Open()|, except that the
+		following key is also supported:
+			fullpath	show absolute paths.
+
+		See also |zeef.Files()|.
 
 BufferSwitcher([{opts}])			*zeef.BufferSwitcher()*
 		Open a buffer switcher. {opts} is as in |zeef.Open|, but the

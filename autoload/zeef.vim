@@ -647,14 +647,20 @@ enddef
 # }}}}
 # Zeefs {{{
 # Path Filters {{{
-
 def SetArglist(items: list<string>)
   execute 'args' join(mapnew(items, (_, p) => fnameescape(p)))
 enddef
 
+def Paths(paths: list<string>, options: dict<any>): list<string>
+  if get(options, 'fullpath', false)
+    return mapnew(paths, (_, p) => fnamemodify(p, ':p'))
+  endif
+  return paths
+enddef
+
 # Filter a list of paths and populate the arglist with the selected items.
 export def Args(paths: list<string>, options: dict<any> = {})
-  Open(paths, SetArglist, 'Choose files', options)
+  Open(Paths(paths, options), SetArglist, 'Choose files', options)
 enddef
 
 # Ditto, but use the paths in the specified directory
