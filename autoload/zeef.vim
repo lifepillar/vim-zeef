@@ -671,23 +671,33 @@ def SwitchToBuffer(items: list<string>)
 enddef
 
 export def BufferSwitcher(options: dict<any> = {})
+  var fullpath = get(options, 'fullpath', false)
   var buffers: list<string> = []
 
   for info in getbufinfo(options)
-    var nr = printf('%4d', info.bufnr)
-    var name = fnamemodify(info.name, ":t")
+    var bufline = printf('%4d ', info.bufnr)
 
-    if empty(name)
-      name = '[No Name]'
+    if empty(info.name)
+      var buftype = getbufvar(info.bufnr, '&buftype')
+
+      if empty(buftype)
+        buftype = '[No Name]'
+      endif
+
+      bufline ..= buftype
+
+      if fullpath
+        bufline ..= '   ' .. getbufoneline(info.bufnr, 1)
+      endif
+    else
+      bufline ..= fnamemodify(info.name, ':t')
+
+      if fullpath
+        bufline ..= '   ' .. info.name
+      endif
     endif
 
-    var line = $'{nr} {name}'
-
-    if get(options, 'fullpath', false)
-      line ..= $'   {info.name}'
-    endif
-
-    buffers->add(line)
+    buffers->add(bufline)
   endfor
 
   Open(buffers, SwitchToBuffer, 'Choose buffer', {multi: false})
