@@ -1,4 +1,4 @@
-*zeef.txt*	For Vim version 9.1	Last change: 2024 Jun 01
+*zeef.txt*	For Vim version 9.1	Last change: 2024 Jun 16
 
 			______          ________                         ~
 			___  /_____________  __/                         ~
@@ -21,13 +21,14 @@ CONTENTS				*zeef-contents*
 
 Zeef is a pure autoload interactive exact and fuzzy filter for a |List| of
 items, entirely written in Vim 9 script. Zeef requires Vim 9.1 or later, built
-with |+popupwin| and |+textprop|. Vim 9.1.403 or later is recommended.
+with |+job|, |+popupwin| and |+textprop|. Vim 9.1.403 or later is recommended.
 
 Zeef does not define any command or mapping: that is left as a task for the
 user (an example is at the end of this section). It is used by invoking
-|zeef.Open()|:
+|zeef.Open()| or |zeef.OpenCmd()|:
 >
 	:call zeef#Open(['January', 'July', 'Julian', 'adjective', 'every'])
+	:call zeef#OpenCmd('ls')
 <
 Start typing to filter the list. Press <tab> to select an item: that will
 automatically open the "Selected Items" popup, which displays the currently
@@ -155,6 +156,25 @@ Open({items}, [{func}, {label}, {opts}])	*zeef.Open()*
 		- `keymap`: this is a dictionary like |zeef.keymap|, but only
 		  for the current Zeef buffer. Takes precedence on
 		  |zeef.keymap| for matching keys.
+
+OpenCmd({command}, [{func}, {label}, {opts}])	*zeef.OpenCmd()*
+		Open a Zeef buffer at the bottom of the screen, populated with
+		the output of {command}. This function opens a Zeef buffer and
+		runs a job whose output is sent to that buffer. {command} is
+		as in |job_start()|. For {func} and {label}, see |zeef.Open()|.
+
+		The {opts} dictionary is as in |zeef.Open()|, but the
+		following additional keys to control the job's behavior can
+		also be set:
+			cwd		working directory for the command.
+			env		environment variables for the command.
+			err_io		destination of stderr messages.
+			err_buf		buffer number for error messages.
+			err_name	the name of the file or buffer to
+					write error messages to.
+
+		By default, "err_io" is set to "null", so error messages are
+		suppressed. See |job-options| for further details.
 
 Args({paths}[, {opts}])				*zeef.Args()*
 		Interactively filter a list of paths and populate the arglist

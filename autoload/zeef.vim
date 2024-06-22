@@ -1,8 +1,8 @@
 vim9script
 
 # Requirements Check {{{
-if !has('popupwin') || !has('textprop') || v:version < 901
-  echomsg 'Zeef requires Vim 9.1 compiled with popupwin and textprop.'
+if !has('job') || !has('popupwin') || !has('textprop') || v:version < 901
+  echomsg 'Zeef requires Vim 9.1 compiled with job, popupwin, and textprop.'
   finish
 endif
 # }}}
@@ -29,6 +29,7 @@ export var winhighlight:     string       = get(g:, 'zeef_winhighlight',     '' 
 # }}}
 # Internal State {{{
 const kEscapeChars = '~.\[:*' # Special characters that must be escaped when exact matching is used
+const kUndoLevels  = 1000     # Undo levels. This basically limits the maximum length of the prompt
 
 var sBufnr:                  number       = -1     # Zeef buffer number
 var sFinish:                 bool         = false  # The event loop is exited when this becomes true
@@ -202,6 +203,9 @@ enddef
 def Match()
   var old_seq = get(undotree(), 'seq_cur', 0)
 
+  # Force a new change (see https://github.com/vim/vim/issues/15025)
+  execute "normal" "i\<c-g>u"
+
   if sFuzzy
     MatchFuzzily()
   else
@@ -217,7 +221,7 @@ def! g:ZeefStatusLine(): string
   return $'%#ZeefName# {Config.StatusLineName()} %* %l of %L' .. (empty(sResult) ? '' : $' ({len(sResult)} selected)')
 enddef
 
-def OpenZeefBuffer(items: list<string>): number
+def OpenZeefBuffer(): number
   # botright 10new may not set the right height, e.g., if the quickfix window is open
   execute $'botright :1new | :{Config.WinHeight()}wincmd +'
 
@@ -252,8 +256,6 @@ def OpenZeefBuffer(items: list<string>): number
         \ statusline=%!ZeefStatusLine()
         \ textwidth=0
         \ winfixheight
-
-  setline(1, items)
 
   return bufnr()
 enddef
@@ -374,7 +376,7 @@ enddef
 
 def ActionClearPrompt()
   clearmatches()
-  silent undo 1
+  silent undo 0
   sUndoStack = []
   sInput = ''
 enddef
@@ -504,7 +506,7 @@ def ActionToggleSelectionPopup()
 enddef
 # }}}
 # Default Key Map {{{
-const cDefaultKeyMap = {
+const kDefaultKeyMap = {
   "\<LeftMouse>":        ActionLeftClick,
   "\<ScrollWheelDown>":  ActionPassthrough,
   "\<ScrollWheelLeft>":  ActionPassthrough,
@@ -582,32 +584,8 @@ def EventLoop()
     endif
   endwhile
 enddef
-# }}}
-# Public Interface {{{
-export def Open(
-    items:                  list<string>,
-    Callback:               func(list<string>) = EchoResult,
-    promptLabel:            string             = 'Zeef',
-    options:                dict<any>          = {},
-    )
-  sLabel              = promptLabel
-  sSkipFirst          = get(options, 'skipfirst', Config.SkipFirst())
-  sMultipleSelection  = get(options, 'multi', true)
-  sDuplicateInsertion = get(options, 'dupinsert', false) && sMultipleSelection
-  sDuplicateDeletion  = get(options, 'dupdelete', false) && sDuplicateInsertion
-  sEscapeChars        = Config.EscapeChars()
-  sWildChar           = Config.WildChar()
-  sKeyMap             = extend(extend(get(options, 'keymap', {}), Config.KeyMap(), 'keep'), cDefaultKeyMap, 'keep')
-  sKeyAliases         = extend(get(options, 'keyaliases', {}), Config.KeyAliases(), 'keep')
-  sWinRestCmd         = winrestcmd()
-  sInput              = ''
-  sResult             = []
-  sFinish             = false
-  sFuzzy              = Config.Fuzzy()
-  sBufnr              = OpenZeefBuffer(items)
 
-  EventLoop()
-
+def Finalize(Callback: func(list<string>))
   if Config.ReuseLastMode()
     fuzzy = sFuzzy
   endif
@@ -619,6 +597,74 @@ export def Open(
   endif
 
   sResult = []
+enddef
+# }}}
+# Init {{{
+def InitState(label: string, options: dict<any>)
+  sLabel              = label
+  sSkipFirst          = get(options, 'skipfirst', Config.SkipFirst())
+  sMultipleSelection  = get(options, 'multi', true)
+  sDuplicateInsertion = get(options, 'dupinsert', false) && sMultipleSelection
+  sDuplicateDeletion  = get(options, 'dupdelete', false) && sDuplicateInsertion
+  sEscapeChars        = Config.EscapeChars()
+  sWildChar           = Config.WildChar()
+  sKeyMap             = extend(extend(get(options, 'keymap', {}), Config.KeyMap(), 'keep'), kDefaultKeyMap, 'keep')
+  sKeyAliases         = extend(get(options, 'keyaliases', {}), Config.KeyAliases(), 'keep')
+  sWinRestCmd         = winrestcmd()
+  sInput              = ''
+  sResult             = []
+  sFinish             = false
+  sFuzzy              = Config.Fuzzy()
+  sBufnr              = OpenZeefBuffer()
+enddef
+
+def Start(Callback: func(list<string>))
+  setbufvar(sBufnr, '&undolevels', kUndoLevels)
+  normal gg
+  EventLoop()
+  Finalize(Callback)
+enddef
+# }}}
+# Public Interface {{{
+export def Open(
+    items:       list<string>,
+    Callback:    func(list<string>) = EchoResult,
+    promptLabel: string             = 'Zeef',
+    options:     dict<any>          = {},
+    )
+  InitState(promptLabel, options)
+
+  setbufvar(sBufnr, '&undolevels', -1)
+  setbufline(sBufnr, 1, items)
+
+  Start(Callback)
+enddef
+
+def CloseCb(ch: channel)
+  job_status(ch_getjob(ch)) # Trigger exit_cb's callback
+enddef
+
+export def OpenCmd(
+    cmd:         any,
+    Callback:    func(list<string>) = EchoResult,
+    promptLabel: string             = 'Zeef',
+    options:     dict<any>          = {},
+    )
+  InitState(promptLabel, options)
+
+  setbufvar(sBufnr, '&undolevels', -1)  # Disable undo for the duration of the job
+  job_start(cmd, {
+    'close_cb': (ch) => CloseCb(ch),
+    'exit_cb':  (ch, e) => Start(Callback),
+    'cwd':      get(options, 'cwd',     getcwd()),
+    'env':      get(options, 'env',     {}      ),
+    'err_buf':  get(options, 'err_buf', sBufnr  ),
+    'err_io':   get(options, 'err_io',  'out'  ),
+    'err_name': "",
+    'in_io':   'null',
+    'out_buf': sBufnr,
+    'out_io':  'buffer',
+  })
 enddef
 
 export def LastKeyPressed(): string
@@ -665,10 +711,10 @@ enddef
 
 # Ditto, but use the paths in the specified directory
 export def Files(directory = '.', options: dict<any> = {})
-  var dir = shellescape(fnamemodify(directory, ':p'))
-  var cmd = executable('rg') ? $"rg --files {dir}" : $"find {dir} -type f"
+  var dir = fnamemodify(directory, ':p')
+  var cmd = executable('rg') ? ['rg', '--files', dir] : ['find', dir, '-type', 'f']
 
-  Open(systemlist(cmd), SetArglist, 'Choose files', options)
+  OpenCmd(cmd, SetArglist, 'Choose files', options)
 enddef
 # }}}
 # Buffer Switcher {{{

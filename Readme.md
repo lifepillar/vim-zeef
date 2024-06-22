@@ -2,7 +2,7 @@
 
 Zeef is a pure autoload interactive exact and fuzzy filter for a list of items,
 entirely written in Vim 9 script. Zeef requires Vim 9.1 or later, built with
-`+popupwin` and `+textprop`.
+`+job`, `+popupwin` and `+textprop`.
 
 Remarkable features:
 
@@ -16,6 +16,7 @@ user (an example is at the end of this document). It is used by invoking
 `zeef.Open()`:
 
     :call zeef#Open(['January', 'July', 'Julian', 'adjective', 'every'])
+    :call zeef#OpenCmd('ls')
 
 Start typing to filter the list. Press Tab to select an item: that will
 automatically open the “selected items” popup, which displays the currently
