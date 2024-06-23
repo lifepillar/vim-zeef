@@ -724,7 +724,7 @@ export def Args(paths: list<string>, options: dict<any> = {})
 enddef
 
 # Ditto, but use the paths in the specified directory
-export def Files(directory = '.', options: dict<any> = {})
+export def Files(directory = getcwd(), options: dict<any> = {})
   var dir = fnamemodify(directory, ':p')
   var cmd = executable('rg') ? ['rg', '--files', dir] : ['find', dir, '-type', 'f']
 
