@@ -1,4 +1,4 @@
-*zeef.txt*	For Vim version 9.1	Last change: 2024 Jun 16
+*zeef.txt*	For Vim version 9.1	Last change: 2024 Jun 23
 
 			______          ________                         ~
 			___  /_____________  __/                         ~
