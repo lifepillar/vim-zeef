@@ -52,4 +52,5 @@ zeef.Open()	zeef.txt	/*zeef.Open()*
 zeef.OpenCmd()	zeef.txt	/*zeef.OpenCmd()*
 zeef.QuickfixList()	zeef.txt	/*zeef.QuickfixList()*
 zeef.SelectedItems()	zeef.txt	/*zeef.SelectedItems()*
+zeef.SetArglist()	zeef.txt	/*zeef.SetArglist()*
 zeef.txt	zeef.txt	/*zeef.txt*

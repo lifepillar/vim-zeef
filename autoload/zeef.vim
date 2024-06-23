@@ -1,8 +1,12 @@
 vim9script
 
 # Requirements Check {{{
-if !has('job') || !has('popupwin') || !has('textprop') || v:version < 901
-  echomsg 'Zeef requires Vim 9.1 compiled with job, popupwin, and textprop.'
+def Msg(msg: string)
+  echomsg '[Zeef]' msg
+enddef
+
+if !has('job') || !has('popupwin') || !has('timers') || !has('textprop') || v:version < 901
+  Msg('Vim 9.1 compiled with job, popupwin, timers and textprop is required.')
   finish
 endif
 # }}}
@@ -204,7 +208,7 @@ def Match()
   var old_seq = get(undotree(), 'seq_cur', 0)
 
   # Force a new change (see https://github.com/vim/vim/issues/15025)
-  execute "normal" "i\<c-g>u"
+  execute 'normal' "i\<c-g>u"
 
   if sFuzzy
     MatchFuzzily()
@@ -618,7 +622,7 @@ def InitState(label: string, options: dict<any>)
   sBufnr              = OpenZeefBuffer()
 enddef
 
-def Start(Callback: func(list<string>))
+def StartZeef(Callback: func(list<string>))
   setbufvar(sBufnr, '&undolevels', kUndoLevels)
   normal gg
   EventLoop()
@@ -637,15 +641,23 @@ export def Open(
   setbufvar(sBufnr, '&undolevels', -1)
   setbufline(sBufnr, 1, items)
 
-  Start(Callback)
+  StartZeef(Callback)
 enddef
 
-def CloseCb(ch: channel)
-  job_status(ch_getjob(ch)) # Trigger exit_cb's callback
+def CheckKeyPress(tid: number, jid: job)
+  if job_status(jid) != 'run'
+    timer_stop(tid)
+    return
+  endif
+
+  if getchar(0) == 27  # Press Esc to stop the job
+    job_stop(jid)
+    timer_stop(tid)
+  endif
 enddef
 
 export def OpenCmd(
-    cmd:         any,
+    cmd:         any,  # list or string
     Callback:    func(list<string>) = EchoResult,
     promptLabel: string             = 'Zeef',
     options:     dict<any>          = {},
@@ -653,18 +665,20 @@ export def OpenCmd(
   InitState(promptLabel, options)
 
   setbufvar(sBufnr, '&undolevels', -1)  # Disable undo for the duration of the job
-  job_start(cmd, {
-    'close_cb': (ch) => CloseCb(ch),
-    'exit_cb':  (ch, e) => Start(Callback),
-    'cwd':      get(options, 'cwd',     getcwd()),
-    'env':      get(options, 'env',     {}      ),
-    'err_buf':  get(options, 'err_buf', sBufnr  ),
-    'err_io':   get(options, 'err_io',  'out'  ),
-    'err_name': "",
-    'in_io':   'null',
-    'out_buf': sBufnr,
-    'out_io':  'buffer',
+
+  var jid = job_start(cmd, {
+    close_cb: (ch) => StartZeef(Callback),
+    cwd:      get(options, 'cwd',     getcwd()),
+    env:      get(options, 'env',     {}      ),
+    err_buf:  get(options, 'err_buf', sBufnr  ),
+    err_io:   get(options, 'err_io',  'null'  ),
+    err_name: '',
+    in_io:    'null',
+    out_buf:  sBufnr,
+    out_io:   'buffer',
   })
+
+  var timerId = timer_start(5, (tid) => CheckKeyPress(tid, jid), {repeat: -1})
 enddef
 
 export def LastKeyPressed(): string
@@ -693,7 +707,7 @@ enddef
 # }}}}
 # Zeefs {{{
 # Path Filters {{{
-def SetArglist(items: list<string>)
+export def SetArglist(items: list<string>)
   execute 'args' join(mapnew(items, (_, p) => fnameescape(p)))
 enddef
 
@@ -848,7 +862,7 @@ def JumpToTag(item: string, bufname: string)
 enddef
 
 export def BufferTags(options: dict<any> = {})
-  var bufname = bufname("%")
+  var bufname = bufname('%')
   var ctagsPath = get(options, 'bin', sCtagsBin)
   var ctagsTypes = get(options, 'types', {})
   var tags = Tags(bufname, &ft, ctagsPath, extend(ctagsTypes, sCtagsTypes, 'keep'))

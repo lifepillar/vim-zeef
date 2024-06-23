@@ -158,10 +158,13 @@ Open({items}, [{func}, {label}, {opts}])	*zeef.Open()*
 		  |zeef.keymap| for matching keys.
 
 OpenCmd({command}, [{func}, {label}, {opts}])	*zeef.OpenCmd()*
-		Open a Zeef buffer at the bottom of the screen, populated with
-		the output of {command}. This function opens a Zeef buffer and
-		runs a job whose output is sent to that buffer. {command} is
-		as in |job_start()|. For {func} and {label}, see |zeef.Open()|.
+		Run {command} in a job and send the output of the command to
+		a Zeef buffer. {command} is as in |job_start()|. If the
+		command takes too long, it may be stopped by pressing Esc: you
+		will still be able to filter the entries that have been sent
+		to Zeef up to that point.
+
+		For {func} and {label}, see |zeef.Open()|.
 
 		The {opts} dictionary is as in |zeef.Open()|, but the
 		following additional keys to control the job's behavior can
@@ -313,6 +316,10 @@ QuickfixList([{func}, {opts}])			*zeef.QuickfixList()*
 SelectedItems()					*zeef.SelectedItems()*
 		Return the currently selected items. This is mainly useful in
 		functions used with |zeef.keymap|.
+
+SetArglist({paths})				*zeef.SetArglist()*
+		Set the |arglist| using the list of {paths} and edit the first
+		item. Useful as a callback.
 
 =============================================================================
 3. Customization				*zeef-customization*
