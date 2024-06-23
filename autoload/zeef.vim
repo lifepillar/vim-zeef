@@ -812,8 +812,8 @@ enddef
 
 export def ColorschemeSwitcher(options: dict<any> = {})
   var searchPaths = [
-    globpath(&runtimepath, 'colors/*.vim', 0, 1),
-    globpath(&packpath, 'pack/*/{opt,start}/*/colors/*.vim', 0, 1),
+    globpath(&runtimepath, 'colors/*.vim',                      0, 1),
+    globpath(&packpath,    'pack/*/{opt,start}/*/colors/*.vim', 0, 1),
   ]
   var colorschemes = []
 
@@ -823,7 +823,11 @@ export def ColorschemeSwitcher(options: dict<any> = {})
 
   uniq(sort(colorschemes))
 
-  Open(colorschemes, SetColorscheme, 'Choose colorscheme', extend(options, {multi: false}, 'keep'))
+  Open(colorschemes,
+    SetColorscheme,
+    'Choose colorscheme',
+    extend(options, {multi: false}, 'keep')
+  )
 enddef
 # }}}
 # Buffer Tags Using Ctags {{{
