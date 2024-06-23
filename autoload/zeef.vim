@@ -831,49 +831,47 @@ export def ColorschemeSwitcher(options: dict<any> = {})
 enddef
 # }}}
 # Buffer Tags Using Ctags {{{
-const sCtagsBin = executable('uctags') ? 'uctags' : 'ctags'
+const kCtagsBin = executable('uctags') ? 'uctags' : 'ctags'
 
-# Adapted from CtrlP's buffertag.vim
-const sCtagsTypes = {
-  'aspperl': 'asp',
-  'aspvbs':  'asp',
-  'cpp':     'c++',
-  'cs':      'c#',
-  'delphi':  'pascal',
-  'expect':  'tcl',
-  'mf':      'metapost',
-  'mp':      'metapost',
-  'rmd':     'rmarkdown',
-  'csh':     'sh',
-  'zsh':     'sh',
-  'tex':     'latex',
-}
+def JumpToTag(item: string)
+  # Jump to a tag. Item must have the following format:
+  # <tag name> <kind> <line number> <file> ...
+  var fields = split(item)
 
-def Tags(path: string, filetype: string, ctagsPath: string, ctagsTypes: dict<string>): list<string>
-  var language = get(ctagsTypes, filetype, filetype)
-  var filepath = shellescape(expand(path))
-
-  return systemlist(
-    $'{ctagsPath} -f - --sort=no --excmd=number --fields= --extras=+F --language-force={language} {filepath}'
-  )
-enddef
-
-def JumpToTag(item: string, bufname: string)
-  if item =~ '^\d\+'
-    var [lnum, _] = split(item, '\s\+')
-    execute $'buffer +{lnum} {bufname}'
+  if len(fields) < 4
+    Msg($'Failed to parse Ctags entry: {item}')
+    return
   endif
+
+  execute $'buffer +{fields[2]} {fields[3]}'
 enddef
 
 export def BufferTags(options: dict<any> = {})
-  var bufname = bufname('%')
-  var ctagsPath = get(options, 'bin', sCtagsBin)
-  var ctagsTypes = get(options, 'types', {})
-  var tags = Tags(bufname, &ft, ctagsPath, extend(ctagsTypes, sCtagsTypes, 'keep'))
+  var names: list<string>
 
-  map(tags, (_, t) => substitute(t, '^\(\S\+\)\s.*\s\(\d\+\)$', '\2 \1', ''))
+  if get(options, 'all', false)
+    names = map(
+      getbufinfo({buflisted: true}), (_, info) => info.name
+    )
+  else
+    names = [getbufinfo('%')[0].name]
+  endif
 
-  Open(tags, (t: list<string>) => JumpToTag(t[0], bufname), 'Choose tag', extend(options, {multi: false}, 'keep'))
+  filter(names, (_, name) => !empty(name))
+
+  if empty(names)
+    Msg('Saving the buffer(s) is required to search for tags.')
+    return
+  endif
+
+  var ctagsPath  = get(options, 'bin', kCtagsBin)
+  var cmd        = [ctagsPath, '-x', '--sort=no'] + names
+
+  OpenCmd(cmd,
+    (t: list<string>) => JumpToTag(t[0]),
+    'Choose tag',
+    extend(options, {multi: false}, 'keep')
+  )
 enddef
 # }}}
 # }}}
