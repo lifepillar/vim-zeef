@@ -101,6 +101,12 @@ To choose a color scheme:
 :call zeef#ColorschemeSwitcher()
 ```
 
+To jump to a tag in any of the open buffers:
+
+```vim
+:call zeef#BufferTags({'all': 1})
+```
+
 If you want to define a command or a mapping for a zeef in your `vimrc` and
 your `vimrc` is written in Vim 9 script, you may proceed it as follows:
 
