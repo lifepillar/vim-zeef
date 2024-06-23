@@ -783,7 +783,7 @@ export def QuickfixList(Callback = JumpToQuickfixEntry, options: dict<any> = {})
   var qflist = getqflist()
 
   if empty(qflist)
-    echo '[Zeef] Quickfix list is empty'
+    Msg('Quickfix list is empty.')
     return
   endif
 
@@ -796,7 +796,7 @@ export def LocationList(winnr = 0, Callback = JumpToLocationListEntry, options: 
   var loclist = getloclist(winnr)
 
   if empty(loclist)
-    echo '[Zeef] Location list is empty'
+    Msg('Location list is empty.')
     return
   endif
 
