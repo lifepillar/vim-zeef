@@ -72,7 +72,7 @@ open:
 - <esc> (Esc), <c-c> (CTRL-C): closes Zeef without performing any action.
 - <enter> (Enter): accepts the current choice.
 - <c-s> (CTRL-S), <c-v> (CTRL-V), <c-t> (CTRL-T): same as <enter>, but also
-  open a horizontal split, vertical split or tab window, respectively.
+  opens a horizontal split, vertical split or tab window, respectively.
 
 Zeef supports using the mouse (see 'mouse'): you may select and deselect by
 clicking on an item, and you may use the mouse to scroll both vertically and
@@ -92,7 +92,7 @@ Zeef comes with a few simple predefined "zeefs":
 - a path filter;
 - a quickfix/location list filter;
 - a color scheme selector;
-- a buffer tag chooser.
+- a buffer tag chooser (requires Ctags).
 
 See |zeef-functions| for a description of each zeef.
 
