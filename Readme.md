@@ -2,7 +2,7 @@
 
 Zeef is a pure autoload interactive exact and fuzzy filter for a list of items,
 entirely written in Vim 9 script. Zeef requires Vim 9.1 or later, built with
-`+job`, `+popupwin` and `+textprop`.
+`+job`, `+popupwin`, `+timers`, and `+textprop`.
 
 Remarkable features:
 
@@ -13,7 +13,7 @@ Remarkable features:
 
 Zeef does not define any command or mapping: that is left as a task for the
 user (an example is at the end of this document). It is used by invoking
-`zeef.Open()`:
+`zeef.Open()` or `zeef.OpenCmd()`:
 
     :call zeef#Open(['January', 'July', 'Julian', 'adjective', 'every'])
     :call zeef#OpenCmd('ls')
@@ -27,12 +27,12 @@ The default callback just echoes the selected items.
 The following is the complete list of special keys you can use when Zeef is
 open:
 
-- CTRL-K or up arrow: move up one line.
-- CTRL-J or down arrow: move down one line.
-- left and right arrows: scroll horizontally.
+- CTRL-K or up arrow: moves up one line.
+- CTRL-J or down arrow: moves down one line.
+- left and right arrows: scrolls horizontally.
 - CTRL-B, CTRL-F, CTRL-D, CTRL-U, CTRL-E, CTRL-Y: usual movements.
 - Backspace: deletes one character from the prompt.
-- CTRL-L: clear the prompt.
+- CTRL-L: clears the prompt.
 - Tab: selects the current item.
 - Shift-Tab: deselects the current item.
 - CTRL-X: toggles the selection of the current item.
@@ -43,7 +43,7 @@ open:
 - CTRL-Z: toggles between exact and fuzzy matching.
 - Esc, CTRL-C: closes Zeef without performing any action.
 - Enter: accepts the current choice.
-- CTRL-S, CTRL-V, CTRL-T: same as Enter, but also open a horizonal split,
+- CTRL-S, CTRL-V, CTRL-T: same as Enter, but also opens a horizonal split,
   vertical split or tab window, respectively.
 
 Zeef supports using the mouse (see `:help 'mouse'`): you may select and
@@ -75,7 +75,7 @@ functionality with minimal help. That said, Zeef does come with a few â€œzeefsâ€
 - a path filter;
 - a quickfix/location list filter;
 - a color scheme selector;
-- a buffer tag chooser.
+- a buffer tag chooser (requires Ctags).
 
 For example, to switch buffer:
 
