@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **As of March 11, 2026, this repository is on [Codeberg](https://codeberg.org/lifepillar/vim-zeef).**
+
 # Zeef
 
 Zeef is a pure autoload interactive exact and fuzzy filter for a list of items,
